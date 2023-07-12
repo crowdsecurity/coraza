@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
 )
 
 var rePathTokenRe = regexp.MustCompile(`\{([^\}]+)\}`)

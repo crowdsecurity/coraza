@@ -6,8 +6,8 @@
 package operators
 
 import (
-	"github.com/corazawaf/coraza/v3/experimental/plugins/macro"
-	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/crowdsecurity/coraza/v3/experimental/plugins/macro"
+	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
 )
 
 type streq struct {

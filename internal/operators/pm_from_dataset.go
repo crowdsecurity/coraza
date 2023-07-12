@@ -10,7 +10,7 @@ import (
 
 	ahocorasick "github.com/petar-dambovaliev/aho-corasick"
 
-	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
 )
 
 func newPMFromDataset(options plugintypes.OperatorOptions) (plugintypes.Operator, error) {

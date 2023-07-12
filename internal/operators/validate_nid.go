@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
 )
 
 type validateNidFunction = func(input string) bool

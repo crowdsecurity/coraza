@@ -7,7 +7,7 @@ import (
 	_ "fmt"
 	"testing"
 
-	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
 )
 
 func TestOneAddress(t *testing.T) {

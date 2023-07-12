@@ -7,7 +7,7 @@
 
 package auditlog
 
-import "github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
+import "github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
 
 func noopFormater(plugintypes.AuditLog) ([]byte, error) {
 	return nil, nil
