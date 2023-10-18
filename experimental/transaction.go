@@ -15,6 +15,9 @@ func ToFullInterface(waf types.Transaction) FullTransaction {
 type FullTransaction interface {
 	types.Transaction
 	RemoveRuleByID(int)
+	RemoveRulesByID(...int)
+	RemoveRuleByTag(string)
+	RemoveRulesByTag(...string)
 	Variables() plugintypes.TransactionVariables
 	Collection(variables.RuleVariable) collection.Collection
 }
