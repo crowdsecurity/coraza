@@ -48,6 +48,7 @@ type Transaction struct {
 	interruption *types.Interruption
 
 	// This is used to store log messages
+	// Deprecated since Coraza 3.0.5: this variable is not used, logdata values are stored in the matched rules
 	Logdata string
 
 	// Rules will be skipped after a rule with this SecMarker is found
@@ -484,12 +485,19 @@ func (tx *Transaction) MatchRule(r *Rule, mds []types.MatchData) {
 		ServerIPAddress_: tx.variables.serverAddr.Get(),
 		ClientIPAddress_: tx.variables.remoteAddr.Get(),
 		Rule_:            &r.RuleMetadata,
+		Log_:             r.Log,
 		MatchedDatas_:    mds,
 	}
-	// Populate MatchedRule Disruptive_ field only if the Engine is capable of performing disruptive actions
+	// Populate MatchedRule disruption related fields only if the Engine is capable of performing disruptive actions
 	if tx.RuleEngine == types.RuleEngineOn {
+		var exists bool
 		for _, a := range r.actions {
+			// There can be only at most one disruptive action per rule
 			if a.Function.Type() == plugintypes.ActionTypeDisruptive {
+				mr.DisruptiveAction_, exists = corazarules.DisruptiveActionMap[a.Name]
+				if !exists {
+					mr.DisruptiveAction_ = corazarules.DisruptiveActionUnknown
+				}
 				mr.Disruptive_ = true
 				break
 			}
@@ -509,6 +517,7 @@ func (tx *Transaction) MatchRule(r *Rule, mds []types.MatchData) {
 	if tx.WAF.ErrorLogCb != nil && r.Log {
 		tx.WAF.ErrorLogCb(mr)
 	}
+
 }
 
 // GetStopWatch is used to debug phase durations
@@ -553,29 +562,25 @@ func (tx *Transaction) GetField(rv ruleVariableParams) []types.MatchData {
 		matches = col.FindAll()
 	}
 
-	var rmi []int
-	for i, c := range matches {
+	// in the most common scenario filteredMatches length will be
+	// the same as matches length, so we avoid allocating per result
+	filteredMatches := make([]types.MatchData, 0, len(matches))
+
+	for _, c := range matches {
+		isException := false
+		lkey := strings.ToLower(c.Key())
 		for _, ex := range rv.Exceptions {
-			lkey := strings.ToLower(c.Key())
-			// in case it matches the regex or the keyStr
-			// Since keys are case sensitive we need to check with lower case
 			if (ex.KeyRx != nil && ex.KeyRx.MatchString(lkey)) || strings.ToLower(ex.KeyStr) == lkey {
-				// we remove the exception from the list of values
-				// we tried with standard append, but it fails... let's do some hacking
-				// m2 := append(matches[:i], matches[i+1:]...)
-				rmi = append(rmi, i)
+				isException = true
+				break
 			}
 		}
-	}
-	// we read the list of indexes backwards
-	// then we remove each one of them because of the exceptions
-	for i := len(rmi) - 1; i >= 0; i-- {
-		if len(matches) < rmi[i]+1 {
-			matches = matches[:rmi[i]-1]
-		} else {
-			matches = append(matches[:rmi[i]], matches[rmi[i]+1:]...)
+		if !isException {
+			filteredMatches = append(filteredMatches, c)
 		}
 	}
+	matches = filteredMatches
+
 	if rv.Count {
 		count := len(matches)
 		matches = []types.MatchData{
@@ -1415,26 +1420,32 @@ func (tx *Transaction) AuditLog() *auditlog.Log {
 			}
 		case types.AuditLogPartRulesMatched:
 			for _, mr := range tx.matchedRules {
-				r := mr.Rule()
-				for _, matchData := range mr.MatchedDatas() {
-					al.Messages_ = append(al.Messages_, auditlog.Message{
-						Actionset_: strings.Join(tx.WAF.ComponentNames, " "),
-						Message_:   matchData.Message(),
-						Data_: &auditlog.MessageData{
-							File_:     mr.Rule().File(),
-							Line_:     mr.Rule().Line(),
-							ID_:       r.ID(),
-							Rev_:      r.Revision(),
-							Msg_:      matchData.Message(),
-							Data_:     matchData.Data(),
-							Severity_: r.Severity(),
-							Ver_:      r.Version(),
-							Maturity_: r.Maturity(),
-							Accuracy_: r.Accuracy(),
-							Tags_:     r.Tags(),
-							Raw_:      r.Raw(),
-						},
-					})
+				// Log action is required to log a matched rule on both error log and audit log
+				// An assertion has to be done to check if the MatchedRule implements the Log() function before calling Log()
+				// It is performed to avoid breaking the Coraza v3.* API adding a Log() method to the MatchedRule interface
+				mrWithlog, ok := mr.(*corazarules.MatchedRule)
+				if ok && mrWithlog.Log() {
+					r := mr.Rule()
+					for _, matchData := range mr.MatchedDatas() {
+						al.Messages_ = append(al.Messages_, auditlog.Message{
+							Actionset_: strings.Join(tx.WAF.ComponentNames, " "),
+							Message_:   matchData.Message(),
+							Data_: &auditlog.MessageData{
+								File_:     mr.Rule().File(),
+								Line_:     mr.Rule().Line(),
+								ID_:       r.ID(),
+								Rev_:      r.Revision(),
+								Msg_:      matchData.Message(),
+								Data_:     matchData.Data(),
+								Severity_: r.Severity(),
+								Ver_:      r.Version(),
+								Maturity_: r.Maturity(),
+								Accuracy_: r.Accuracy(),
+								Tags_:     r.Tags(),
+								Raw_:      r.Raw(),
+							},
+						})
+					}
 				}
 			}
 		}

@@ -15,6 +15,7 @@ import (
 	"github.com/crowdsecurity/coraza/v3/experimental/plugins/macro"
 	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
 	"github.com/crowdsecurity/coraza/v3/internal/corazarules"
+	"github.com/crowdsecurity/coraza/v3/internal/memoize"
 	"github.com/crowdsecurity/coraza/v3/types"
 	"github.com/crowdsecurity/coraza/v3/types/variables"
 )
@@ -341,7 +342,7 @@ func (r *Rule) doEvaluate(phase types.RulePhase, tx *Transaction, collectiveMatc
 		}
 
 		// Expansion of Msg and LogData is postponed here. It allows to run it only if the whole rule/chain
-		// matches and to rely on MATCHED_* variables updated by the chain, not just by the fist rule.
+		// matches and to rely on MATCHED_* variables updated by the chain, not just by the first rule.
 		if !r.MultiMatch {
 			if r.Msg != nil {
 				matchedValues[0].(*corazarules.MatchData).Message_ = r.Msg.Expand(tx)
@@ -456,7 +457,12 @@ func (r *Rule) AddVariable(v variables.RuleVariable, key string, iscount bool) e
 	var re *regexp.Regexp
 	if len(key) > 2 && key[0] == '/' && key[len(key)-1] == '/' {
 		key = key[1 : len(key)-1]
-		re = regexp.MustCompile(key)
+
+		if vare, err := memoize.Do(key, func() (interface{}, error) { return regexp.Compile(key) }); err != nil {
+			return err
+		} else {
+			re = vare.(*regexp.Regexp)
+		}
 	}
 
 	if multiphaseEvaluation {
@@ -521,7 +527,11 @@ func (r *Rule) AddVariableNegation(v variables.RuleVariable, key string) error {
 	var re *regexp.Regexp
 	if len(key) > 2 && key[0] == '/' && key[len(key)-1] == '/' {
 		key = key[1 : len(key)-1]
-		re = regexp.MustCompile(key)
+		if vare, err := memoize.Do(key, func() (interface{}, error) { return regexp.Compile(key) }); err != nil {
+			return err
+		} else {
+			re = vare.(*regexp.Regexp)
+		}
 	}
 	// Prevent sigsev
 	if r == nil {

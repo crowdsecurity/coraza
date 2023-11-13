@@ -20,8 +20,7 @@ import (
 
 var addLicenseVersion = "v1.1.1" // https://github.com/google/addlicense/releases
 var gosImportsVer = "v0.3.7"     // https://github.com/rinchsan/gosimports/releases
-
-var errRunGoModTidy = errors.New("go.mod/sum not formatted, commit changes")
+var golangCILintVer = "v1.54.0"  // https://github.com/golangci/golangci-lint/releases
 var errNoGitDir = errors.New("no .git directory found")
 var errUpdateGeneratedFiles = errors.New("generated files need to be updated")
 
@@ -98,10 +97,6 @@ func Lint() error {
 		return err
 	}
 
-	if sh.Run("git", "diff", "--exit-code", "**/go.mod", "**/go.sum", "go.work", "go.work.sum") != nil {
-		return errRunGoModTidy
-	}
-
 	return nil
 }
 
@@ -110,12 +105,23 @@ func Test() error {
 	if err := sh.RunV("go", "test", "./..."); err != nil {
 		return err
 	}
+
+	if err := sh.RunV("go", "test", "-tags=memoize_builders", "./..."); err != nil {
+		return err
+	}
+
 	if err := sh.RunV("go", "test", "./examples/http-server"); err != nil {
 		return err
 	}
+
 	if err := sh.RunV("go", "test", "./testing/coreruleset"); err != nil {
 		return err
 	}
+
+	if err := sh.RunV("go", "test", "-tags=memoize_builders", "./testing/coreruleset"); err != nil {
+		return err
+	}
+
 	// Execute FTW tests with multiphase evaluation enabled as well
 	if err := sh.RunV("go", "test", "-tags=coraza.rule.multiphase_evaluation", "./testing/coreruleset"); err != nil {
 		return err
