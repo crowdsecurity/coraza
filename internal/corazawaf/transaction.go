@@ -622,6 +622,12 @@ func (tx *Transaction) RemoveRuleByTag(tag string) {
 	}
 }
 
+func (tx *Transaction) RemoveRulesByTag(tag ...string) {
+	for _, t := range tag {
+		tx.RemoveRuleByTag(t)
+	}
+}
+
 // ProcessConnection should be called at very beginning of a request process, it is
 // expected to be executed prior to the virtual host resolution, when the
 // connection arrives on the server.
