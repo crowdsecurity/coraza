@@ -43,6 +43,7 @@ func (a *redirectFn) Evaluate(r plugintypes.RuleMetadata, tx plugintypes.Transac
 		RuleID: rid,
 		Action: "redirect",
 		Data:   a.target,
+		Tags:   r.Tags(),
 	})
 }
 

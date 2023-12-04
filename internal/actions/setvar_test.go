@@ -26,6 +26,9 @@ func (md) ParentID() int {
 func (md) Status() int {
 	return 0
 }
+func (md) Tags() []string {
+	return []string{}
+}
 
 func TestSetvarInit(t *testing.T) {
 	t.Run("no arguments", func(t *testing.T) {

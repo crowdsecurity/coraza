@@ -161,6 +161,10 @@ func (r *Rule) Status() int {
 	return r.DisruptiveStatus
 }
 
+func (r *Rule) Tags() []string {
+	return r.Tags_
+}
+
 const chainLevelZero = 0
 
 // Evaluate will evaluate the current rule for the indicated transaction

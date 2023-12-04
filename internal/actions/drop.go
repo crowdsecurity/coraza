@@ -44,6 +44,7 @@ func (a *dropFn) Evaluate(r plugintypes.RuleMetadata, tx plugintypes.Transaction
 		Status: r.Status(),
 		RuleID: rid,
 		Action: "drop",
+		Tags:   r.Tags(),
 	})
 }
 
