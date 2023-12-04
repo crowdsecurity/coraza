@@ -390,3 +390,7 @@ func (w *WAF) Validate() error {
 
 	return nil
 }
+
+func (w *WAF) GetRuleGroup() RuleGroup {
+	return w.Rules
+}

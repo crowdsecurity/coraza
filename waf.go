@@ -22,6 +22,7 @@ type WAF interface {
 	// NewTransaction Creates a new initialized transaction for this WAF instance
 	NewTransaction() types.Transaction
 	NewTransactionWithID(id string) types.Transaction
+	GetRuleGroup() corazawaf.RuleGroup
 }
 
 // NewWAF creates a new WAF instance with the provided configuration.
@@ -122,4 +123,8 @@ func (w wafWrapper) NewTransaction() types.Transaction {
 // NewTransactionWithID implements the same method on WAF.
 func (w wafWrapper) NewTransactionWithID(id string) types.Transaction {
 	return w.waf.NewTransactionWithID(id)
+}
+
+func (w wafWrapper) GetRuleGroup() corazawaf.RuleGroup {
+	return w.waf.Rules
 }
