@@ -181,7 +181,7 @@ type Interruption struct {
 	// Parameters used by proxy and redirect
 	Data string
 
-	//Tags of the rule that caused the interruption
+	// Tags of the rule that caused the interruption
 	Tags []string
 }
 

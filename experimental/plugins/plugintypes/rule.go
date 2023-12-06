@@ -22,6 +22,6 @@ type RuleMetadata interface {
 	// Status returns the status to set if the rule matches.
 	Status() int
 
-	//Tags returns the tags of the rule.
+	// Tags returns the tags of the rule.
 	Tags() []string
 }
