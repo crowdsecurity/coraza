@@ -16,3 +16,5 @@ require (
 	golang.org/x/tools v0.22.0 // indirect
 	rsc.io/binaryregexp v0.2.0 // indirect
 )
+
+replace github.com/corazawaf/coraza/v3 => github.com/crowdsecurity/coraza/v3 main

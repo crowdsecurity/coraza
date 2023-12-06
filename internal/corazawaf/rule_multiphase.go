@@ -6,8 +6,8 @@ package corazawaf
 import (
 	"strings"
 
-	"github.com/corazawaf/coraza/v3/types"
-	"github.com/corazawaf/coraza/v3/types/variables"
+	"github.com/crowdsecurity/coraza/v3/types"
+	"github.com/crowdsecurity/coraza/v3/types/variables"
 )
 
 type inferredPhases byte

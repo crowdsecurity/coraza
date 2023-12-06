@@ -46,6 +46,7 @@ func (a *denyFn) Evaluate(r plugintypes.RuleMetadata, tx plugintypes.Transaction
 		Status: status,
 		RuleID: rid,
 		Action: "deny",
+		Tags:   r.Tags(),
 	})
 }
 

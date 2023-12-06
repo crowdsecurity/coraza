@@ -180,6 +180,9 @@ type Interruption struct {
 
 	// Parameters used by proxy and redirect
 	Data string
+
+	// Tags of the rule that caused the interruption
+	Tags []string
 }
 
 // BodyBufferOptions is used to feed a coraza.BodyBuffer with parameters

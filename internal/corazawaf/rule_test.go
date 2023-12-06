@@ -343,6 +343,7 @@ func (*dummyDenyAction) Evaluate(r plugintypes.RuleMetadata, tx plugintypes.Tran
 		Status: r.Status(),
 		RuleID: rid,
 		Action: "deny",
+		Tags:   r.Tags(),
 	})
 }
 

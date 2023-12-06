@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/corazawaf/coraza/v3/internal/environment"
-	"github.com/corazawaf/coraza/v3/types"
+	"github.com/crowdsecurity/coraza/v3/internal/environment"
+	"github.com/crowdsecurity/coraza/v3/types"
 )
 
 func TestBodyReaderMemory(t *testing.T) {
@@ -142,7 +142,7 @@ func TestWriteLimit(t *testing.T) {
 	}
 }
 
-// See https://github.com/corazawaf/coraza-caddy/issues/48
+// See https://github.com/crowdsecurity/coraza-caddy/issues/48
 func TestBodyBufferResetAndReadTheReader(t *testing.T) {
 	br := NewBodyBuffer(types.BodyBufferOptions{
 		MemoryLimit: 5,

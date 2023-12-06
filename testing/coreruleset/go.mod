@@ -1,4 +1,4 @@
-module github.com/corazawaf/coraza/v3/testing/coreruleset
+module github.com/crowdsecurity/coraza/v3/testing/coreruleset
 
 go 1.23.0
 
@@ -53,4 +53,4 @@ require (
 	rsc.io/binaryregexp v0.2.0 // indirect
 )
 
-replace github.com/corazawaf/coraza/v3 => ../../
+replace github.com/corazawaf/coraza/v3 => github.com/crowdsecurity/coraza/v3 main

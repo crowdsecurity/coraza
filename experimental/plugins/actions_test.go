@@ -6,9 +6,9 @@ package plugins_test
 import (
 	"testing"
 
-	"github.com/corazawaf/coraza/v3/experimental/plugins"
-	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
-	"github.com/corazawaf/coraza/v3/internal/actions"
+	"github.com/crowdsecurity/coraza/v3/experimental/plugins"
+	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/crowdsecurity/coraza/v3/internal/actions"
 )
 
 func TestAction(t *testing.T) {

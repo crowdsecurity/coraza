@@ -3,7 +3,7 @@
 
 package plugintypes
 
-import "github.com/corazawaf/coraza/v3/types"
+import "github.com/crowdsecurity/coraza/v3/types"
 
 // Rule is a rule executed against a transaction.
 type Rule interface {
@@ -21,4 +21,7 @@ type RuleMetadata interface {
 
 	// Status returns the status to set if the rule matches.
 	Status() int
+
+	// Tags returns the tags of the rule.
+	Tags() []string
 }

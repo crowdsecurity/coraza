@@ -18,7 +18,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/corazawaf/coraza/v3/types/variables"
+	"github.com/crowdsecurity/coraza/v3/types/variables"
 )
 
 // Case Insensitive Map
