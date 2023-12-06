@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
-	"github.com/corazawaf/coraza/v3/types"
+	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/crowdsecurity/coraza/v3/types"
 )
 
 func TestNativeFormatter(t *testing.T) {

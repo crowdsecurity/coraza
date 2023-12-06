@@ -16,18 +16,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/corazawaf/coraza/v3/collection"
-	"github.com/corazawaf/coraza/v3/debuglog"
-	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
-	"github.com/corazawaf/coraza/v3/internal/auditlog"
-	"github.com/corazawaf/coraza/v3/internal/bodyprocessors"
-	"github.com/corazawaf/coraza/v3/internal/collections"
-	"github.com/corazawaf/coraza/v3/internal/corazarules"
-	"github.com/corazawaf/coraza/v3/internal/corazatypes"
-	stringsutil "github.com/corazawaf/coraza/v3/internal/strings"
-	urlutil "github.com/corazawaf/coraza/v3/internal/url"
-	"github.com/corazawaf/coraza/v3/types"
-	"github.com/corazawaf/coraza/v3/types/variables"
+	"github.com/crowdsecurity/coraza/v3/collection"
+	"github.com/crowdsecurity/coraza/v3/debuglog"
+	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/crowdsecurity/coraza/v3/internal/auditlog"
+	"github.com/crowdsecurity/coraza/v3/internal/bodyprocessors"
+	"github.com/crowdsecurity/coraza/v3/internal/collections"
+	"github.com/crowdsecurity/coraza/v3/internal/corazarules"
+	"github.com/crowdsecurity/coraza/v3/internal/corazatypes"
+	stringsutil "github.com/crowdsecurity/coraza/v3/internal/strings"
+	urlutil "github.com/crowdsecurity/coraza/v3/internal/url"
+	"github.com/crowdsecurity/coraza/v3/types"
+	"github.com/crowdsecurity/coraza/v3/types/variables"
 )
 
 // Transaction is created from a WAF instance to handle web requests and responses,
@@ -610,6 +610,24 @@ func (tx *Transaction) RemoveRuleByID(id int) {
 	tx.ruleRemoveByID = append(tx.ruleRemoveByID, id)
 }
 
+func (tx *Transaction) RemoveRulesByID(id ...int) {
+	tx.ruleRemoveByID = append(tx.ruleRemoveByID, id...)
+}
+
+func (tx *Transaction) RemoveRuleByTag(tag string) {
+	for _, rule := range tx.WAF.Rules.rules {
+		if stringsutil.InSlice(tag, rule.Tags_) {
+			tx.RemoveRuleByID(rule.ID_)
+		}
+	}
+}
+
+func (tx *Transaction) RemoveRulesByTag(tag ...string) {
+	for _, t := range tag {
+		tx.RemoveRuleByTag(t)
+	}
+}
+
 // ProcessConnection should be called at very beginning of a request process, it is
 // expected to be executed prior to the virtual host resolution, when the
 // connection arrives on the server.
@@ -1083,7 +1101,7 @@ func (tx *Transaction) WriteResponseBody(b []byte) (*types.Interruption, int, er
 		runProcessResponseBody = false
 	)
 	if tx.responseBodyBuffer.length+writingBytes >= tx.ResponseBodyLimit {
-		// TODO: figure out ErrorData vs DataError: https://github.com/corazawaf/coraza/issues/564
+		// TODO: figure out ErrorData vs DataError: https://github.com/crowdsecurity/coraza/issues/564
 		tx.variables.outboundDataError.Set("1")
 		if tx.WAF.ResponseBodyLimitAction == types.BodyLimitActionReject {
 			// We interrupt this transaction in case ResponseBodyLimitAction is Reject
@@ -1135,7 +1153,7 @@ func (tx *Transaction) ReadResponseBodyFrom(r io.Reader) (*types.Interruption, i
 	if l, ok := r.(ByteLenger); ok {
 		writingBytes = int64(l.Len())
 		if tx.responseBodyBuffer.length+writingBytes >= tx.ResponseBodyLimit {
-			// TODO: figure out ErrorData vs DataError: https://github.com/corazawaf/coraza/issues/564
+			// TODO: figure out ErrorData vs DataError: https://github.com/crowdsecurity/coraza/issues/564
 			tx.variables.outboundDataError.Set("1")
 			if tx.WAF.ResponseBodyLimitAction == types.BodyLimitActionReject {
 				return setAndReturnBodyLimitInterruption(tx)

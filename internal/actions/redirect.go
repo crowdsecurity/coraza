@@ -4,8 +4,8 @@
 package actions
 
 import (
-	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
-	"github.com/corazawaf/coraza/v3/types"
+	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/crowdsecurity/coraza/v3/types"
 )
 
 // Action Group: Disruptive
@@ -43,6 +43,7 @@ func (a *redirectFn) Evaluate(r plugintypes.RuleMetadata, tx plugintypes.Transac
 		RuleID: rid,
 		Action: "redirect",
 		Data:   a.target,
+		Tags:   r.Tags(),
 	})
 }
 

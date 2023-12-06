@@ -4,8 +4,8 @@
 package actions
 
 import (
-	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
-	"github.com/corazawaf/coraza/v3/types"
+	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/crowdsecurity/coraza/v3/types"
 )
 
 // Action Group: Disruptive
@@ -37,6 +37,7 @@ func (a *denyFn) Evaluate(r plugintypes.RuleMetadata, tx plugintypes.Transaction
 		Status: r.Status(),
 		RuleID: rid,
 		Action: "deny",
+		Tags:   r.Tags(),
 	})
 }
 
