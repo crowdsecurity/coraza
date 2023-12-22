@@ -77,6 +77,14 @@ var DisruptiveActionMap = map[string]DisruptiveAction{
 	"redirect": DisruptiveActionRedirect,
 }
 
+var disruptiveActionMapStr = map[DisruptiveAction]string{
+	DisruptiveActionAllow:    "allow",
+	DisruptiveActionDeny:     "deny",
+	DisruptiveActionDrop:     "drop",
+	DisruptiveActionPass:     "pass",
+	DisruptiveActionRedirect: "redirect",
+}
+
 // MatchedRule contains a list of macro expanded messages,
 // matched variables and a pointer to the rule
 type MatchedRule struct {
@@ -179,6 +187,10 @@ func (mr *MatchedRule) Context() context.Context {
 }
 
 const maxSizeLogMessage = 280
+
+func (mr *MatchedRule) DisruptiveAction() string {
+	return disruptiveActionMapStr[mr.DisruptiveAction_]
+}
 
 func (mr MatchedRule) writeDetails(log *strings.Builder, matchData types.MatchData) {
 	msg := matchData.Message()
