@@ -10,6 +10,7 @@ import (
 	"mime"
 	"mime/multipart"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
@@ -20,6 +21,15 @@ import (
 type multipartBodyProcessor struct{}
 
 func (mbp *multipartBodyProcessor) ProcessRequest(reader io.Reader, v plugintypes.TransactionVariables, options plugintypes.BodyProcessorOptions) error {
+	//Set REQUEST_BODY no matter what
+	buf := new(strings.Builder)
+	if _, err := io.Copy(buf, reader); err != nil {
+		return err
+	}
+	b := buf.String()
+	v.RequestBody().(*collections.Single).Set(b)
+	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(b)))
+
 	mimeType := options.Mime
 	storagePath := options.StoragePath
 	mediaType, params, err := mime.ParseMediaType(mimeType)
