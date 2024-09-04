@@ -1772,9 +1772,12 @@ func TestForceRequestBodyOverride(t *testing.T) {
 }
 
 func TestCloseFails(t *testing.T) {
+<<<<<<< HEAD
 	if !environment.HasAccessToFS {
 		t.Skip("skipping test as it requires access to filesystem")
 	}
+=======
+>>>>>>> 77fdc675 (merge from upstream (#5))
 	waf := NewWAF()
 	tx := waf.NewTransaction()
 	col := tx.Variables().FilesTmpNames().(*collections.Map)
