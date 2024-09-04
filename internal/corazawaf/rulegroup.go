@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/crowdsecurity/coraza/v3/internal/corazatypes"
-	"github.com/crowdsecurity/coraza/v3/internal/strings"
+	utils "github.com/crowdsecurity/coraza/v3/internal/strings"
 	"github.com/crowdsecurity/coraza/v3/types"
 	"github.com/crowdsecurity/coraza/v3/types/variables"
 )
@@ -102,7 +102,7 @@ func (rg *RuleGroup) DeleteByMsg(msg string) {
 func (rg *RuleGroup) DeleteByTag(tag string) {
 	var kept []Rule
 	for _, r := range rg.rules {
-		if !strings.InSlice(tag, r.Tags_) {
+		if !utils.InSlice(tag, r.Tags_) {
 			kept = append(kept, r)
 		}
 	}

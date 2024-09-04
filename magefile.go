@@ -110,7 +110,7 @@ func Test() error {
 		return err
 	}
 
-	if err := sh.RunV("go", "test", "./examples/http-server"); err != nil {
+	if err := sh.RunV("go", "test", "./examples/http-server", "-race"); err != nil {
 		return err
 	}
 
@@ -124,6 +124,10 @@ func Test() error {
 
 	// Execute FTW tests with multiphase evaluation enabled as well
 	if err := sh.RunV("go", "test", "-tags=coraza.rule.multiphase_evaluation", "./testing/coreruleset"); err != nil {
+		return err
+	}
+
+	if err := sh.RunV("go", "test", "-tags=coraza.rule.case_sensitive_args_keys", "-run=^TestCaseSensitive", "./..."); err != nil {
 		return err
 	}
 
@@ -182,7 +186,8 @@ func Fuzz() error {
 		{
 			pkg: "./internal/transformations",
 			tests: []string{
-				"FuzzB64Decode",
+				"FuzzB64Decode$",
+				"FuzzB64DecodeExt",
 				"FuzzCMDLine",
 			},
 		},

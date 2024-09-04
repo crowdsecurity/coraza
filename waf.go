@@ -4,9 +4,13 @@
 package coraza
 
 import (
+	"context"
 	"fmt"
+	"strings"
 
+	"github.com/crowdsecurity/coraza/v3/experimental"
 	"github.com/crowdsecurity/coraza/v3/internal/corazawaf"
+	"github.com/crowdsecurity/coraza/v3/internal/environment"
 	"github.com/crowdsecurity/coraza/v3/internal/seclang"
 	"github.com/crowdsecurity/coraza/v3/types"
 )
@@ -30,6 +34,12 @@ func NewWAF(config WAFConfig) (WAF, error) {
 	c := config.(*wafConfig)
 
 	waf := corazawaf.NewWAF()
+
+	if environment.HasAccessToFS {
+		if err := environment.IsDirWritable(waf.TmpDir); err != nil {
+			return nil, fmt.Errorf("filesystem access check: %w. Use 'no_fs_access' build tag, if not available", err)
+		}
+	}
 
 	if c.debugLogger != nil {
 		waf.Logger = c.debugLogger
@@ -130,7 +140,17 @@ func (w wafWrapper) NewTransaction() types.Transaction {
 
 // NewTransactionWithID implements the same method on WAF.
 func (w wafWrapper) NewTransactionWithID(id string) types.Transaction {
-	return w.waf.NewTransactionWithID(id)
+	id = strings.TrimSpace(id)
+	if len(id) == 0 {
+		w.waf.Logger.Warn().Msg("Empty ID passed for new transaction")
+	}
+
+	return w.waf.NewTransactionWithOptions(corazawaf.Options{Context: context.Background(), ID: id})
+}
+
+// NewTransaction implements the same method on WAF.
+func (w wafWrapper) NewTransactionWithOptions(opts experimental.Options) types.Transaction {
+	return w.waf.NewTransactionWithOptions(opts)
 }
 
 func (w wafWrapper) GetRuleGroup() *corazawaf.RuleGroup {
