@@ -11,6 +11,7 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/crowdsecurity/coraza/v3/internal/collections"
 )
 
 type jsonBodyProcessor struct{}
@@ -18,6 +19,15 @@ type jsonBodyProcessor struct{}
 var _ plugintypes.BodyProcessor = &jsonBodyProcessor{}
 
 func (js *jsonBodyProcessor) ProcessRequest(reader io.Reader, v plugintypes.TransactionVariables, _ plugintypes.BodyProcessorOptions) error {
+	buf := new(strings.Builder)
+	if _, err := io.Copy(buf, reader); err != nil {
+		return err
+	}
+
+	b := buf.String()
+
+	v.RequestBody().(*collections.Single).Set(b)
+	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(b)))
 	col := v.ArgsPost()
 	data, err := readJSON(reader)
 	if err != nil {
