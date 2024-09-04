@@ -5,6 +5,7 @@ package seclang
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -120,7 +121,7 @@ func TestSecRuleUpdateTargetVariableNegation(t *testing.T) {
 		SecRule REQUEST_URI|REQUEST_COOKIES "abc" "id:9,phase:2"
 		SecRuleUpdateTargetById 99 "!REQUEST_HEADERS:xyz"
 	`)
-	expectedErr = errors.New("cannot create a variable exception for an undefined rule")
+	expectedErr = errors.New("SecRuleUpdateTargetById: rule \"99\" not found")
 	if errors.Unwrap(err).Error() != expectedErr.Error() {
 		t.Fatalf("unexpected error, want %q, have %q", expectedErr, errors.Unwrap(err).Error())
 	}
@@ -246,6 +247,57 @@ func TestInvalidOperatorRuleData(t *testing.T) {
 		t.Run(tt, func(t *testing.T) {
 			if _, _, _, err := parseActionOperator(tt); err == nil {
 				t.Error("expected error")
+			}
+		})
+	}
+}
+
+func TestRawChainedRules(t *testing.T) {
+	waf := corazawaf.NewWAF()
+	p := NewParser(waf)
+	if err := p.FromString(`
+	SecRule REQUEST_URI "abc" "id:7,phase:2,chain"
+	SecRule REQUEST_URI "def" "chain"
+	SecRule REQUEST_URI "ghi" ""
+	`); err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
+	}
+	raw := waf.Rules.GetRules()[0].Raw()
+	spl := strings.Split(raw, "\n")
+	if len(spl) != 3 {
+		t.Errorf("unexpected number of chained rules, want 3, have %d", len(spl))
+	}
+	for i, r := range spl {
+		// we test that all lines begin with SecRule REQUEST_URI "
+		if !strings.HasPrefix(r, "SecRule REQUEST_URI ") {
+			t.Errorf("unexpected rule at line %d: %s", i, r)
+		}
+	}
+}
+
+func TestParseRule(t *testing.T) {
+	tests := []struct {
+		name string
+		vars string
+		want int
+	}{
+		{"Does not contain escape characters", `ARGS_GET:/(test)/|REQUEST_XML`, 2},
+		{"The last variable contains escape characters", `ARGS_GET|REQUEST_XML:/(test)\b/`, 2},
+		{"Contains escape characters", `ARGS_GET:/(test\b)/|REQUEST_XML`, 2},
+	}
+
+	for _, tc := range tests {
+		tt := tc
+		t.Run(tt.name, func(t *testing.T) {
+			rp := RuleParser{
+				rule: corazawaf.NewRule(),
+			}
+			if err := rp.ParseVariables(tt.vars); err != nil {
+				t.Error(err)
+			}
+			got := reflect.ValueOf(rp.rule).Elem().FieldByName("variables").Len()
+			if got != tt.want {
+				t.Error("variables parse error want", tt.want, "got", got)
 			}
 		})
 	}

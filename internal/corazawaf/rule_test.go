@@ -1,4 +1,4 @@
-// Copyright 2022 Juan Pablo Tosso and the OWASP Coraza contributors
+// Copyright 2024 Juan Pablo Tosso and the OWASP Coraza contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package corazawaf
@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/crowdsecurity/coraza/v3/debuglog"
 	"github.com/crowdsecurity/coraza/v3/experimental/plugins/macro"
 	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
 	"github.com/crowdsecurity/coraza/v3/internal/corazarules"
@@ -20,6 +21,7 @@ func TestMatchEvaluate(t *testing.T) {
 	r.Msg, _ = macro.NewMacro("Message")
 	r.LogData, _ = macro.NewMacro("Data Message")
 	r.ID_ = 1
+	r.LogID_ = "1"
 	if err := r.AddVariable(variables.ArgsGet, "", false); err != nil {
 		t.Error(err)
 	}
@@ -31,7 +33,7 @@ func TestMatchEvaluate(t *testing.T) {
 	tx.AddGetRequestArgument("test", "0")
 
 	var matchedValues []types.MatchData
-	matchdata := r.doEvaluate(types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
+	matchdata := r.doEvaluate(debuglog.Noop(), types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
 	if len(matchdata) != 1 {
 		t.Errorf("Expected 1 matchdata from a SecActions rule, got %d", len(matchdata))
 	}
@@ -43,6 +45,7 @@ func TestMatchEvaluate(t *testing.T) {
 func TestNoMatchEvaluate(t *testing.T) {
 	r := NewRule()
 	r.ID_ = 1
+	r.LogID_ = "1"
 	if err := r.AddVariable(variables.ArgsGet, "", false); err != nil {
 		t.Error(err)
 	}
@@ -54,7 +57,7 @@ func TestNoMatchEvaluate(t *testing.T) {
 	tx.AddGetRequestArgument("test", "999")
 
 	var matchedValues []types.MatchData
-	matchdata := r.doEvaluate(types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
+	matchdata := r.doEvaluate(debuglog.Noop(), types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
 	if len(matchdata) != 0 {
 		t.Errorf("Expected 0 matchdata from a SecActions rule, got %d", len(matchdata))
 	}
@@ -64,27 +67,50 @@ func TestNoMatchEvaluate(t *testing.T) {
 }
 
 func TestNoMatchEvaluateBecauseOfException(t *testing.T) {
-	r := NewRule()
-	r.Msg, _ = macro.NewMacro("Message")
-	r.LogData, _ = macro.NewMacro("Data Message")
-	r.ID_ = 1
-	if err := r.AddVariable(variables.ArgsGet, "", false); err != nil {
-		t.Error(err)
+	testCases := []struct {
+		name     string
+		variable variables.RuleVariable
+	}{
+		{
+			name:     "Test ArgsGet target exception",
+			variable: variables.ArgsGet,
+		},
+		{
+			name:     "Test Args target exception",
+			variable: variables.Args,
+		},
+		{
+			name:     "Test ArgsNames target exception",
+			variable: variables.ArgsNames,
+		},
 	}
-	dummyEqOp := &dummyEqOperator{}
-	r.SetOperator(dummyEqOp, "@eq", "0")
-	action := &dummyDenyAction{}
-	_ = r.AddAction("dummyDeny", action)
-	tx := NewWAF().NewTransaction()
-	tx.AddGetRequestArgument("test", "0")
-	tx.RemoveRuleTargetByID(1, variables.ArgsGet, "test")
-	var matchedValues []types.MatchData
-	matchdata := r.doEvaluate(types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
-	if len(matchdata) != 0 {
-		t.Errorf("Expected 0 matchdata, got %d", len(matchdata))
-	}
-	if tx.interruption != nil {
-		t.Errorf("Expected interruption not triggered because of RemoveRuleTargetByID")
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := NewRule()
+			r.Msg, _ = macro.NewMacro("Message")
+			r.LogData, _ = macro.NewMacro("Data Message")
+			r.ID_ = 1
+			r.LogID_ = "1"
+			if err := r.AddVariable(tc.variable, "", false); err != nil {
+				t.Error(err)
+			}
+			dummyEqOp := &dummyEqOperator{}
+			r.SetOperator(dummyEqOp, "@eq", "0")
+			action := &dummyDenyAction{}
+			_ = r.AddAction("dummyDeny", action)
+			tx := NewWAF().NewTransaction()
+			tx.AddGetRequestArgument("test", "0")
+			tx.RemoveRuleTargetByID(1, tc.variable, "test")
+			var matchedValues []types.MatchData
+			matchdata := r.doEvaluate(debuglog.Noop(), types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
+			if len(matchdata) != 0 {
+				t.Errorf("Expected 0 matchdata, got %d", len(matchdata))
+			}
+			if tx.interruption != nil {
+				t.Errorf("Expected interruption not triggered because of RemoveRuleTargetByID")
+			}
+		})
 	}
 }
 
@@ -106,6 +132,7 @@ func (*dummyFlowAction) Type() plugintypes.ActionType {
 func TestFlowActionIfDetectionOnlyEngine(t *testing.T) {
 	r := NewRule()
 	r.ID_ = 1
+	r.LogID_ = "1"
 	r.operator = nil
 	action := &dummyFlowAction{}
 	_ = r.AddAction("dummyFlowAction", action)
@@ -113,7 +140,7 @@ func TestFlowActionIfDetectionOnlyEngine(t *testing.T) {
 	tx.RuleEngine = types.RuleEngineDetectionOnly
 
 	var matchedValues []types.MatchData
-	matchdata := r.doEvaluate(types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
+	matchdata := r.doEvaluate(debuglog.Noop(), types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
 	if len(matchdata) != 1 {
 		t.Errorf("Expected 1 matchdata, got %d", len(matchdata))
 	}
@@ -151,6 +178,7 @@ func TestMatchVariableRunsActionTypeNondisruptive(t *testing.T) {
 func TestDisruptiveActionFromChainNotEvaluated(t *testing.T) {
 	r := NewRule()
 	r.ID_ = 1
+	r.LogID_ = "1"
 	r.operator = nil
 	r.HasChain = true
 	action := &dummyNonDisruptiveAction{}
@@ -158,6 +186,7 @@ func TestDisruptiveActionFromChainNotEvaluated(t *testing.T) {
 	chainedRule := NewRule()
 	chainedRule.ID_ = 0
 	chainedRule.ParentID_ = 1
+	chainedRule.LogID_ = "1"
 	chainedRule.operator = nil
 	chainedAction := &dummyDenyAction{}
 	_ = chainedRule.AddAction("dummyDenyAction", chainedAction)
@@ -165,7 +194,7 @@ func TestDisruptiveActionFromChainNotEvaluated(t *testing.T) {
 	tx := NewWAF().NewTransaction()
 
 	var matchedValues []types.MatchData
-	matchdata := r.doEvaluate(types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
+	matchdata := r.doEvaluate(debuglog.Noop(), types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
 	if len(matchdata) != 2 {
 		t.Errorf("Expected 2 matchdata from a SecActions chained rule (total 2 rules), got %d", len(matchdata))
 	}
@@ -178,12 +207,13 @@ func TestRuleDetailsTransferredToTransaction(t *testing.T) {
 	r := NewRule()
 	r.ID_ = 0
 	r.ParentID_ = 1
+	r.LogID_ = "1"
 	r.Capture = true
 	r.operator = nil
 	tx := NewWAF().NewTransaction()
 
 	var matchedValues []types.MatchData
-	r.doEvaluate(types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
+	r.doEvaluate(debuglog.Noop(), types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
 	if tx.variables.rule.Get("id")[0] != strconv.Itoa(r.ParentID()) {
 		t.Errorf("Expected id: %d (parent id), got %s", r.ParentID(), tx.variables.rule.Get("id")[0])
 	}
@@ -203,11 +233,12 @@ func TestSecActionMessagePropagationInMatchData(t *testing.T) {
 	r.Msg, _ = macro.NewMacro("Message")
 	r.LogData, _ = macro.NewMacro("Data Message")
 	r.ID_ = 1
+	r.LogID_ = "1"
 	// SecAction uses nil operator
 	r.operator = nil
 	tx := NewWAF().NewTransaction()
 	var matchedValues []types.MatchData
-	matchdata := r.doEvaluate(types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
+	matchdata := r.doEvaluate(debuglog.Noop(), types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
 	if len(matchdata) != 1 {
 		t.Errorf("Expected 1 matchdata from a SecActions rule, got %d", len(matchdata))
 	}
@@ -253,16 +284,6 @@ func TestRuleNegativeVariablesEmtpyRule(t *testing.T) {
 	var rule *Rule
 	if err := rule.AddVariableNegation(variables.ArgsGet, "test"); err == nil {
 		t.Error("Expected error, calling AddVariableNegation for an undefined rule")
-	}
-}
-
-func TestVariableKeysAreCaseInsensitive(t *testing.T) {
-	rule := NewRule()
-	if err := rule.AddVariable(variables.RequestURI, "Som3ThinG", false); err != nil {
-		t.Error(err)
-	}
-	if rule.variables[0].KeyStr != "som3thing" {
-		t.Error("variable key is not case insensitive")
 	}
 }
 
@@ -533,6 +554,7 @@ func TestTransformArgNoCacheForTXVariable(t *testing.T) {
 func TestCaptureNotPropagatedToInnerChainRule(t *testing.T) {
 	r := NewRule()
 	r.ID_ = 1
+	r.LogID_ = "1"
 	r.operator = nil
 	r.HasChain = true
 	r.Phase_ = 1
@@ -540,12 +562,13 @@ func TestCaptureNotPropagatedToInnerChainRule(t *testing.T) {
 	chainedRule := NewRule()
 	chainedRule.ID_ = 0
 	chainedRule.ParentID_ = 1
+	chainedRule.LogID_ = "1"
 	chainedRule.operator = nil
 	chainedRule.Capture = false
 	r.Chain = chainedRule
 	tx := NewWAF().NewTransaction()
 	var matchedValues []types.MatchData
-	r.doEvaluate(types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
+	r.doEvaluate(debuglog.Noop(), types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
 	// We expect that capture is false after doEvaluate.
 	if tx.Capture {
 		t.Errorf("Expected capture to be false. The parent rule enables capture, but inner rule should disable it.")
@@ -555,6 +578,7 @@ func TestCaptureNotPropagatedToInnerChainRule(t *testing.T) {
 func TestExpandMacroAfterWholeRuleEvaluation(t *testing.T) {
 	r := NewRule()
 	r.ID_ = 1
+	r.LogID_ = "1"
 	r.operator = nil
 	r.HasChain = true
 	r.Phase_ = 1
@@ -565,6 +589,7 @@ func TestExpandMacroAfterWholeRuleEvaluation(t *testing.T) {
 	chainedRule := NewRule()
 	chainedRule.ID_ = 0
 	chainedRule.ParentID_ = 1
+	chainedRule.LogID_ = "1"
 	chainedRule.operator = nil
 
 	_ = r.AddVariable(variables.RequestURI, "", false)
@@ -581,7 +606,7 @@ func TestExpandMacroAfterWholeRuleEvaluation(t *testing.T) {
 	tx.AddGetRequestArgument("test", "0")
 
 	var matchedValues []types.MatchData
-	matchdata := r.doEvaluate(types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
+	matchdata := r.doEvaluate(debuglog.Noop(), types.PhaseRequestHeaders, tx, &matchedValues, 0, tx.transformationCache)
 	if len(matchdata) != 2 {
 		t.Errorf("Expected 2 matchdata from a chained rule (total 2 rules), got %d", len(matchdata))
 	}

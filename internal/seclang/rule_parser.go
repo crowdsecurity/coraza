@@ -145,6 +145,9 @@ func (rp *RuleParser) ParseVariables(vars string) error {
 				isEscaped = !isEscaped
 			default:
 				curKey = append(curKey, c)
+				if isEscaped {
+					isEscaped = false
+				}
 			}
 		case 3:
 			// XPATH
@@ -379,12 +382,14 @@ func ParseRule(options RuleOptions) (*corazawaf.Rule, error) {
 		}
 	}
 	rule := rp.Rule()
-	rule.Raw_ = options.Raw
 	rule.File_ = options.ParserConfig.ConfigFile
 	rule.Line_ = options.ParserConfig.LastLine
 
 	if parent := getLastRuleExpectingChain(options.WAF); parent != nil {
 		rule.ParentID_ = parent.ID_
+		// While the ID_ will be kept to 0 being a chain rule, the LogID_ is meant to be
+		// the printable ID that represents the chain rule, therefore the parent's ID is inherited.
+		rule.LogID_ = parent.LogID_
 		lastChain := parent
 		for lastChain.Chain != nil {
 			lastChain = lastChain.Chain
@@ -392,7 +397,12 @@ func ParseRule(options RuleOptions) (*corazawaf.Rule, error) {
 		// TODO we must remove defaultactions from chains
 		rule.Phase_ = 0
 		lastChain.Chain = rule
+		// This way we store the raw rule in the parent
+		parent.Raw_ += " \n" + options.Raw
 		return nil, nil
+	} else {
+		// we only want Raw for the parent
+		rule.Raw_ = options.Raw
 	}
 	return rule, nil
 }
