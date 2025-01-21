@@ -1,4 +1,4 @@
-// Copyright 2022 Juan Pablo Tosso and the OWASP Coraza contributors
+// Copyright 2024 Juan Pablo Tosso and the OWASP Coraza contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package seclang
@@ -10,8 +10,13 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/jcchavezs/mergefs"
+	"github.com/jcchavezs/mergefs/io"
+
+	coreruleset "github.com/corazawaf/coraza-coreruleset"
 	coraza "github.com/crowdsecurity/coraza/v3/internal/corazawaf"
 )
 
@@ -84,19 +89,67 @@ func TestErrorWithBackticks(t *testing.T) {
 func TestLoadConfigurationFile(t *testing.T) {
 	waf := coraza.NewWAF()
 	p := NewParser(waf)
+
+	t.Run("existing file", func(t *testing.T) {
+		err := p.FromFile("../../coraza.conf-recommended")
+		if err != nil {
+			t.Errorf("unexpected error: %s", err.Error())
+		}
+	})
+
+	t.Run("unexisting file", func(t *testing.T) {
+		err := p.FromFile("../doesnotexist.conf")
+		if err == nil {
+			t.Error("expected not found error")
+		}
+	})
+
+	t.Run("successful glob", func(t *testing.T) {
+		err := p.FromFile("./testdata/glob/*.conf")
+		if err != nil {
+			t.Errorf("unexpected error: %s", err.Error())
+		}
+	})
+
+	t.Run("empty glob result", func(t *testing.T) {
+		err := p.FromFile("./testdata/glob/*.comf")
+		if err != nil {
+			t.Errorf("unexpected error despite glob not matching any file")
+		}
+	})
+}
+
+// Connectors are supporting embedding github.com/corazawaf/coraza-coreruleset to ease CRS integration
+// mergefs.Merge is used to combine both CRS and local files. This test is to ensure that the parser
+// is able to load configuration files from both filesystems.
+func TestLoadConfigurationFileWithMultiFs(t *testing.T) {
+	waf := coraza.NewWAF()
+	p := NewParser(waf)
+	p.SetRoot(mergefs.Merge(coreruleset.FS, io.OSFS))
+
 	err := p.FromFile("../../coraza.conf-recommended")
 	if err != nil {
 		t.Errorf("unexpected error: %s", err.Error())
 	}
 
 	err = p.FromFile("../doesnotexist.conf")
-	if err == nil {
-		t.Error("expected not found error")
+	// Go and TinyGo have different error messages
+	if !strings.Contains(err.Error(), "no such file or directory") && !strings.Contains(err.Error(), "file does not exist") {
+		t.Errorf("expected not found error. Got: %s", err.Error())
+	}
+
+	err = p.FromFile("/tmp/doesnotexist.conf")
+	if !strings.Contains(err.Error(), "no such file or directory") && !strings.Contains(err.Error(), "file does not exist") {
+		t.Errorf("expected not found error. Got: %s", err.Error())
 	}
 
 	err = p.FromFile("./testdata/glob/*.conf")
 	if err != nil {
 		t.Errorf("unexpected error: %s", err.Error())
+	}
+
+	if err := p.FromString("Include @owasp_crs/REQUEST-911-METHOD-ENFORCEMENT.conf"); err != nil {
+		t.Error(err)
 	}
 }
 
@@ -166,6 +219,10 @@ func TestHardcodedIncludeDirectiveDDOS2(t *testing.T) {
 		t.Fatal(err)
 	}
 	tmpFile2, err := os.Create(filepath.Join(t.TempDir(), "rand2.conf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = tmpFile2.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
