@@ -10,7 +10,7 @@ import (
 
 	"github.com/tidwall/gjson"
 
-	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
 )
 
 type jsonBodyProcessor struct{}

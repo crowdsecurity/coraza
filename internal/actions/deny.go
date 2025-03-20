@@ -6,8 +6,8 @@ package actions
 import (
 	"net/http"
 
-	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
-	"github.com/crowdsecurity/coraza/v3/types"
+	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/corazawaf/coraza/v3/types"
 )
 
 // Action Group: Disruptive

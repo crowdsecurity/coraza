@@ -6,8 +6,8 @@ package experimental_test
 import (
 	"fmt"
 
-	"github.com/crowdsecurity/coraza/v3"
-	"github.com/crowdsecurity/coraza/v3/experimental"
+	"github.com/corazawaf/coraza/v3"
+	"github.com/corazawaf/coraza/v3/experimental"
 )
 
 func ExampleWAFWithOptions_NewTransactionWithOptions() {

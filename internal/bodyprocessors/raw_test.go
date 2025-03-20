@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
-	"github.com/crowdsecurity/coraza/v3/internal/bodyprocessors"
-	"github.com/crowdsecurity/coraza/v3/internal/corazawaf"
+	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/corazawaf/coraza/v3/internal/bodyprocessors"
+	"github.com/corazawaf/coraza/v3/internal/corazawaf"
 )
 
 func TestRAW(t *testing.T) {

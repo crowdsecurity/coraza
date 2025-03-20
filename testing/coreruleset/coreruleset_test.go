@@ -32,9 +32,9 @@ import (
 
 	coreruleset "github.com/corazawaf/coraza-coreruleset/v4"
 	crstests "github.com/corazawaf/coraza-coreruleset/v4/tests"
-	"github.com/crowdsecurity/coraza/v3"
-	txhttp "github.com/crowdsecurity/coraza/v3/http"
-	"github.com/crowdsecurity/coraza/v3/types"
+	"github.com/corazawaf/coraza/v3"
+	txhttp "github.com/corazawaf/coraza/v3/http"
+	"github.com/corazawaf/coraza/v3/types"
 )
 
 func BenchmarkCRSCompilation(b *testing.B) {

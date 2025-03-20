@@ -6,7 +6,7 @@ package collections
 import (
 	"testing"
 
-	"github.com/crowdsecurity/coraza/v3/types/variables"
+	"github.com/corazawaf/coraza/v3/types/variables"
 )
 
 func TestSizedCollection(t *testing.T) {

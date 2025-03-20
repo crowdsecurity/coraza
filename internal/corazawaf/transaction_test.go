@@ -14,16 +14,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/crowdsecurity/coraza/v3/collection"
-	"github.com/crowdsecurity/coraza/v3/debuglog"
-	"github.com/crowdsecurity/coraza/v3/experimental/plugins/macro"
-	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
-	"github.com/crowdsecurity/coraza/v3/internal/collections"
-	"github.com/crowdsecurity/coraza/v3/internal/corazarules"
-	"github.com/crowdsecurity/coraza/v3/internal/environment"
-	utils "github.com/crowdsecurity/coraza/v3/internal/strings"
-	"github.com/crowdsecurity/coraza/v3/types"
-	"github.com/crowdsecurity/coraza/v3/types/variables"
+	"github.com/corazawaf/coraza/v3/collection"
+	"github.com/corazawaf/coraza/v3/debuglog"
+	"github.com/corazawaf/coraza/v3/experimental/plugins/macro"
+	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/corazawaf/coraza/v3/internal/collections"
+	"github.com/corazawaf/coraza/v3/internal/corazarules"
+	"github.com/corazawaf/coraza/v3/internal/environment"
+	utils "github.com/corazawaf/coraza/v3/internal/strings"
+	"github.com/corazawaf/coraza/v3/types"
+	"github.com/corazawaf/coraza/v3/types/variables"
 )
 
 func TestTxSettersMultipart(t *testing.T) {

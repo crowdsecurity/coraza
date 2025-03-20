@@ -1,4 +1,4 @@
-module github.com/crowdsecurity/coraza/v3/testing/coreruleset
+module github.com/corazawaf/coraza/v3/testing/coreruleset
 
 go 1.22.3
 
@@ -7,9 +7,9 @@ toolchain go1.23.2
 require (
 	github.com/bmatcuk/doublestar/v4 v4.8.0
 	github.com/corazawaf/coraza-coreruleset/v4 v4.7.0
+	github.com/corazawaf/coraza/v3 v3.3.2
 	github.com/coreruleset/albedo v0.0.16
 	github.com/coreruleset/go-ftw v1.2.0
-	github.com/crowdsecurity/coraza/v3 v3.3.2
 	github.com/rs/zerolog v1.33.0
 )
 
@@ -17,7 +17,6 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
-	github.com/corazawaf/coraza/v3 v3.3.2 // indirect
 	github.com/corazawaf/libinjection-go v0.2.2 // indirect
 	github.com/coreruleset/ftw-tests-schema/v2 v2.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
@@ -40,6 +39,9 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/petar-dambovaliev/aho-corasick v0.0.0-20240411101913-e07a1f0e8eb4 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/tidwall/gjson v1.18.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/valllabh/ocsf-schema-golang v1.0.3 // indirect
 	github.com/yargevad/filepathx v1.0.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect

@@ -13,13 +13,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/crowdsecurity/coraza/v3/debuglog"
-	"github.com/crowdsecurity/coraza/v3/internal/auditlog"
-	"github.com/crowdsecurity/coraza/v3/internal/corazawaf"
-	"github.com/crowdsecurity/coraza/v3/internal/environment"
-	"github.com/crowdsecurity/coraza/v3/internal/memoize"
-	utils "github.com/crowdsecurity/coraza/v3/internal/strings"
-	"github.com/crowdsecurity/coraza/v3/types"
+	"github.com/corazawaf/coraza/v3/debuglog"
+	"github.com/corazawaf/coraza/v3/internal/auditlog"
+	"github.com/corazawaf/coraza/v3/internal/corazawaf"
+	"github.com/corazawaf/coraza/v3/internal/environment"
+	"github.com/corazawaf/coraza/v3/internal/memoize"
+	utils "github.com/corazawaf/coraza/v3/internal/strings"
+	"github.com/corazawaf/coraza/v3/types"
 )
 
 // DirectiveOptions contains the parsed options for a directive. It is mutable and propagated

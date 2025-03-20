@@ -7,7 +7,7 @@
 
 package auditlog
 
-import "github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
+import "github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
 
 // noopWriter is used as a no operations audit log writer.
 type noopWriter struct{}

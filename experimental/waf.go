@@ -4,8 +4,8 @@
 package experimental
 
 import (
-	"github.com/crowdsecurity/coraza/v3/internal/corazawaf"
-	"github.com/crowdsecurity/coraza/v3/types"
+	"github.com/corazawaf/coraza/v3/internal/corazawaf"
+	"github.com/corazawaf/coraza/v3/types"
 )
 
 type Options = corazawaf.Options
