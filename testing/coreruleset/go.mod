@@ -53,4 +53,4 @@ require (
 	rsc.io/binaryregexp v0.2.0 // indirect
 )
 
-replace github.com/corazawaf/coraza/v3 => github.com/crowdsecurity/coraza/v3 main
+replace github.com/corazawaf/coraza/v3 => github.com/crowdsecurity/coraza/v3 v3.0.0-20250320223126-d7f736e6301f
