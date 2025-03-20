@@ -11,7 +11,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
 )
 
 type inspectFile struct {

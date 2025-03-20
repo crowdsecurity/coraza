@@ -1,10 +1,10 @@
 package experimental
 
 import (
-	"github.com/crowdsecurity/coraza/v3/collection"
-	"github.com/crowdsecurity/coraza/v3/experimental/plugins/plugintypes"
-	"github.com/crowdsecurity/coraza/v3/types"
-	"github.com/crowdsecurity/coraza/v3/types/variables"
+	"github.com/corazawaf/coraza/v3/collection"
+	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
+	"github.com/corazawaf/coraza/v3/types"
+	"github.com/corazawaf/coraza/v3/types/variables"
 )
 
 func ToFullInterface(waf types.Transaction) FullTransaction {
