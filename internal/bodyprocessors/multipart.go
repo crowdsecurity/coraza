@@ -21,7 +21,7 @@ import (
 type multipartBodyProcessor struct{}
 
 func (mbp *multipartBodyProcessor) ProcessRequest(reader io.Reader, v plugintypes.TransactionVariables, options plugintypes.BodyProcessorOptions) error {
-	//Set REQUEST_BODY no matter what
+	// Set REQUEST_BODY no matter what
 	buf := new(strings.Builder)
 	if _, err := io.Copy(buf, reader); err != nil {
 		return err
