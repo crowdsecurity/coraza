@@ -4,6 +4,7 @@
 package bodyprocessors
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -22,13 +23,17 @@ type multipartBodyProcessor struct{}
 
 func (mbp *multipartBodyProcessor) ProcessRequest(reader io.Reader, v plugintypes.TransactionVariables, options plugintypes.BodyProcessorOptions) error {
 	// Set REQUEST_BODY no matter what
-	buf := new(strings.Builder)
-	if _, err := io.Copy(buf, reader); err != nil {
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		// Even though it's not technically a multipart error, we did not managed to read the body
+		v.MultipartStrictError().(*collections.Single).Set("1")
 		return err
 	}
-	b := buf.String()
-	v.RequestBody().(*collections.Single).Set(b)
-	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(b)))
+
+	v.RequestBody().(*collections.Single).Set(string(body))
+	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(body)))
+
+	reader = bytes.NewReader(body)
 
 	mimeType := options.Mime
 	storagePath := options.StoragePath
@@ -107,6 +112,7 @@ func (mbp *multipartBodyProcessor) ProcessRequest(reader io.Reader, v plugintype
 		}
 		filesCombinedSizeCol.(*collections.Single).Set(fmt.Sprintf("%d", totalSize))
 	}
+
 	return nil
 }
 

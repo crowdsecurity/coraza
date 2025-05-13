@@ -4,6 +4,7 @@
 package bodyprocessors
 
 import (
+	"bytes"
 	"io"
 	"strconv"
 	"strings"
@@ -19,15 +20,16 @@ type jsonBodyProcessor struct{}
 var _ plugintypes.BodyProcessor = &jsonBodyProcessor{}
 
 func (js *jsonBodyProcessor) ProcessRequest(reader io.Reader, v plugintypes.TransactionVariables, _ plugintypes.BodyProcessorOptions) error {
-	buf := new(strings.Builder)
-	if _, err := io.Copy(buf, reader); err != nil {
+	// Set REQUEST_BODY no matter what
+	body, err := io.ReadAll(reader)
+	if err != nil {
 		return err
 	}
 
-	b := buf.String()
+	v.RequestBody().(*collections.Single).Set(string(body))
+	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(body)))
 
-	v.RequestBody().(*collections.Single).Set(b)
-	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(b)))
+	reader = bytes.NewReader(body)
 	col := v.ArgsPost()
 	data, err := readJSON(reader)
 	if err != nil {
