@@ -4,10 +4,8 @@
 package bodyprocessors
 
 import (
-	"bytes"
 	"io"
 	"strconv"
-	"strings"
 
 	"github.com/tidwall/gjson"
 
@@ -20,24 +18,26 @@ type jsonBodyProcessor struct{}
 var _ plugintypes.BodyProcessor = &jsonBodyProcessor{}
 
 func (js *jsonBodyProcessor) ProcessRequest(reader io.Reader, v plugintypes.TransactionVariables, _ plugintypes.BodyProcessorOptions) error {
-	// Set REQUEST_BODY no matter what
-	body, err := io.ReadAll(reader)
+	bodyBytes, err := io.ReadAll(reader)
 	if err != nil {
 		return err
 	}
+	bodyStr := string(bodyBytes)
 
-	v.RequestBody().(*collections.Single).Set(string(body))
-	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(body)))
+	// Always set REQUEST_BODY
+	v.RequestBody().(*collections.Single).Set(bodyStr)
+	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(bodyBytes)))
 
-	reader = bytes.NewReader(body)
+	json := gjson.Parse(bodyStr)
 	col := v.ArgsPost()
-	data, err := readJSON(reader)
-	if err != nil {
-		return err
+	res := make(map[string]string)
+	key := []byte("json")
+	readItems(json, key, res)
+
+	for k, val := range res {
+		col.SetIndex(k, 0, val)
 	}
-	for key, value := range data {
-		col.SetIndex(key, 0, value)
-	}
+
 	return nil
 }
 
@@ -54,13 +54,12 @@ func (js *jsonBodyProcessor) ProcessResponse(reader io.Reader, v plugintypes.Tra
 }
 
 func readJSON(reader io.Reader) (map[string]string, error) {
-	s := strings.Builder{}
-	_, err := io.Copy(&s, reader)
+	bodyBytes, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
 
-	json := gjson.Parse(s.String())
+	json := gjson.ParseBytes(bodyBytes)
 	res := make(map[string]string)
 	key := []byte("json")
 	readItems(json, key, res)
