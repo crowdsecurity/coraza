@@ -32,7 +32,6 @@ var _ = profile.RegisterProfile(profile.Profile{
 							TriggeredRules: []int{
 								100,
 								101,
-								103, // It matches because we always set the request body
 								1100,
 								1101,
 								1102,
