@@ -49,4 +49,5 @@ type MatchedRule interface {
 	ErrorLog() string
 
 	DisruptiveAction() string
+	// TODO(4.x): Add Log()
 }
