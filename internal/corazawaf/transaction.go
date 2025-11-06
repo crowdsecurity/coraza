@@ -1713,6 +1713,7 @@ type TransactionVariables struct {
 	reqbodyProcessorError    *collections.Single
 	reqbodyProcessorErrorMsg *collections.Single
 	requestBasename          *collections.Single
+	rawRequestBody           *collections.Single
 	requestBody              *collections.Single
 	requestBodyLength        *collections.Single
 	requestCookies           *collections.NamedCollection
@@ -1958,6 +1959,10 @@ func (v *TransactionVariables) RequestBodyProcessor() collection.Single {
 
 func (v *TransactionVariables) RequestBasename() collection.Single {
 	return v.requestBasename
+}
+
+func (v *TransactionVariables) RawRequestBody() collection.Single {
+	return v.rawRequestBody
 }
 
 func (v *TransactionVariables) RequestBody() collection.Single {

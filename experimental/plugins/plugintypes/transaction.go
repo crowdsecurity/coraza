@@ -66,6 +66,7 @@ type TransactionVariables interface {
 	RequestBodyProcessorErrorMsg() collection.Single
 	RequestBodyProcessor() collection.Single
 	RequestBasename() collection.Single
+	RawRequestBody() collection.Single
 	RequestBody() collection.Single
 	RequestBodyLength() collection.Single
 	RequestFilename() collection.Single

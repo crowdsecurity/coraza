@@ -58,6 +58,8 @@ func (v RuleVariable) Name() string {
 		return "REQUEST_BASENAME"
 	case RequestBody:
 		return "REQUEST_BODY"
+	case RawRequestBody:
+		return "RAW_REQUEST_BODY"
 	case RequestBodyLength:
 		return "REQUEST_BODY_LENGTH"
 	case RequestFilename:
@@ -325,6 +327,7 @@ var rulemapRev = map[string]RuleVariable{
 	"REQBODY_PROCESSOR":                ReqbodyProcessor,
 	"REQUEST_BASENAME":                 RequestBasename,
 	"REQUEST_BODY":                     RequestBody,
+	"RAW_REQUEST_BODY":                 RawRequestBody,
 	"REQUEST_BODY_LENGTH":              RequestBodyLength,
 	"REQUEST_FILENAME":                 RequestFilename,
 	"REQUEST_LINE":                     RequestLine,
