@@ -1714,6 +1714,7 @@ type TransactionVariables struct {
 	reqbodyProcessorErrorMsg *collections.Single
 	requestBasename          *collections.Single
 	rawRequestBody           *collections.Single
+	rawRequestBodyLength     *collections.Single
 	requestBody              *collections.Single
 	requestBodyLength        *collections.Single
 	requestCookies           *collections.NamedCollection
@@ -1783,6 +1784,8 @@ func NewTransactionVariables() *TransactionVariables {
 	v.reqbodyProcessorErrorMsg = collections.NewSingle(variables.ReqbodyProcessorErrorMsg)
 	v.reqbodyProcessor = collections.NewSingle(variables.ReqbodyProcessor)
 	v.requestBasename = collections.NewSingle(variables.RequestBasename)
+	v.rawRequestBody = collections.NewSingle(variables.RawRequestBody)
+	v.rawRequestBodyLength = collections.NewSingle(variables.RawRequestBodyLength)
 	v.requestBody = collections.NewSingle(variables.RequestBody)
 	v.requestBodyLength = collections.NewSingle(variables.RequestBodyLength)
 	v.requestFilename = collections.NewSingle(variables.RequestFilename)
@@ -1963,6 +1966,10 @@ func (v *TransactionVariables) RequestBasename() collection.Single {
 
 func (v *TransactionVariables) RawRequestBody() collection.Single {
 	return v.rawRequestBody
+}
+
+func (v *TransactionVariables) RawRequestBodyLength() collection.Single {
+	return v.rawRequestBodyLength
 }
 
 func (v *TransactionVariables) RequestBody() collection.Single {

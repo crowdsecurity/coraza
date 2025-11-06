@@ -67,6 +67,7 @@ type TransactionVariables interface {
 	RequestBodyProcessor() collection.Single
 	RequestBasename() collection.Single
 	RawRequestBody() collection.Single
+	RawRequestBodyLength() collection.Single
 	RequestBody() collection.Single
 	RequestBodyLength() collection.Single
 	RequestFilename() collection.Single

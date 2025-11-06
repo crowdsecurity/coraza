@@ -63,13 +63,15 @@ const (
 	// RequestBasename contains the name after the last slash in the request URI
 	// It does not pass through any anti-evasion, use with transformations
 	RequestBasename = variables.RequestBasename
+	// RawRequestBody contains the full raw request body as received, without any processing
+	// It will always be available unless request body access is off
+	RawRequestBody = variables.RawRequestBody
+	// RawRequestBodyLength contains the length of the raw request body in bytes
+	RawRequestBodyLength = variables.RawRequestBodyLength
 	// RequestBody contains the full request body, it will only be available
 	// For urlencoded requests. It is possible to force it's presence by using
 	// the ctl:forceRequestBodyVariable action
 	RequestBody = variables.RequestBody
-	// RawRequestBody contains the full raw request body as received, without any processing
-	// It will always be available unless request body access is off
-	RawRequestBody = variables.RawRequestBody
 	// RequestBodyLength contains the length of the request body in bytes calculated from
 	// the BodyBuffer, not from the content-type header
 	RequestBodyLength = variables.RequestBodyLength
