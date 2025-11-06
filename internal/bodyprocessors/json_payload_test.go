@@ -31,11 +31,11 @@ func TestJSONPayload(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if v.RequestBody().Get() != payload {
-		t.Errorf("Expected %s, got %s", payload, v.RequestBody().Get())
+	if v.RawRequestBody().Get() != payload {
+		t.Errorf("Expected %s, got %s", payload, v.RawRequestBody().Get())
 	}
-	if rbl, _ := strconv.Atoi(v.RequestBodyLength().Get()); rbl != len(payload) {
-		t.Errorf("Expected %d, got %s", len(payload), v.RequestBodyLength().Get())
+	if rbl, _ := strconv.Atoi(v.RawRequestBodyLength().Get()); rbl != len(payload) {
+		t.Errorf("Expected %d, got %s", len(payload), v.RawRequestBodyLength().Get())
 	}
 	if v.ArgsPost().Get("json.foo")[0] != "bar" {
 		t.Errorf("Expected %s, got %s", "bar", v.ArgsPost().Get("json.foo"))

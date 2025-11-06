@@ -18,14 +18,14 @@ type xmlBodyProcessor struct {
 }
 
 func (*xmlBodyProcessor) ProcessRequest(reader io.Reader, v plugintypes.TransactionVariables, options plugintypes.BodyProcessorOptions) error {
-	// Set REQUEST_BODY no matter what
+	// Set RAW_REQUEST_BODY no matter what
 	body, err := io.ReadAll(reader)
 	if err != nil {
 		return err
 	}
 
-	v.RequestBody().(*collections.Single).Set(string(body))
-	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(body)))
+	v.RawRequestBody().(*collections.Single).Set(string(body))
+	v.RawRequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(body)))
 
 	reader = bytes.NewReader(body)
 

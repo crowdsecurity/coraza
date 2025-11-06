@@ -30,8 +30,8 @@ func (mbp *multipartBodyProcessor) ProcessRequest(reader io.Reader, v plugintype
 		return err
 	}
 
-	v.RequestBody().(*collections.Single).Set(string(body))
-	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(body)))
+	v.RawRequestBody().(*collections.Single).Set(string(body))
+	v.RawRequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(body)))
 
 	reader = bytes.NewReader(body)
 

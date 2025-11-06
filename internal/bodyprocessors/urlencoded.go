@@ -28,8 +28,11 @@ func (*urlencodedBodyProcessor) ProcessRequest(reader io.Reader, v plugintypes.T
 	for k, vs := range values {
 		argsCol.Set(k, vs)
 	}
+	bodyLen := strconv.Itoa(len(b))
 	v.RequestBody().(*collections.Single).Set(b)
-	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(b)))
+	v.RequestBodyLength().(*collections.Single).Set(bodyLen)
+	v.RawRequestBody().(*collections.Single).Set(b)
+	v.RawRequestBodyLength().(*collections.Single).Set(bodyLen)
 	return nil
 }
 

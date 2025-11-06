@@ -24,9 +24,9 @@ func (js *jsonBodyProcessor) ProcessRequest(reader io.Reader, v plugintypes.Tran
 	}
 	bodyStr := string(bodyBytes)
 
-	// Always set REQUEST_BODY
-	v.RequestBody().(*collections.Single).Set(bodyStr)
-	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(bodyBytes)))
+	// Always set RAW_REQUEST_BODY
+	v.RawRequestBody().(*collections.Single).Set(bodyStr)
+	v.RawRequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(bodyBytes)))
 
 	json := gjson.Parse(bodyStr)
 	col := v.ArgsPost()
