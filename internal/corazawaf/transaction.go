@@ -175,6 +175,10 @@ func (tx *Transaction) Collection(idx variables.RuleVariable) collection.Collect
 		return tx.variables.reqbodyProcessor
 	case variables.RequestBasename:
 		return tx.variables.requestBasename
+	case variables.RawRequestBody:
+		return tx.variables.rawRequestBody
+	case variables.RawRequestBodyLength:
+		return tx.variables.rawRequestBodyLength
 	case variables.RequestBody:
 		return tx.variables.requestBody
 	case variables.RequestBodyLength:
@@ -2311,6 +2315,12 @@ func (v *TransactionVariables) All(f func(v variables.RuleVariable, col collecti
 		return
 	}
 	if !f(variables.RequestBasename, v.requestBasename) {
+		return
+	}
+	if !f(variables.RawRequestBody, v.rawRequestBody) {
+		return
+	}
+	if !f(variables.RawRequestBodyLength, v.rawRequestBodyLength) {
 		return
 	}
 	if !f(variables.RequestBody, v.requestBody) {
