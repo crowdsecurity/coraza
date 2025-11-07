@@ -34,6 +34,9 @@ func TestJSONPayload(t *testing.T) {
 	if v.RawRequestBody().Get() != payload {
 		t.Errorf("Expected %s, got %s", payload, v.RawRequestBody().Get())
 	}
+	if v.RequestBody().Get() != "" {
+		t.Errorf("Expected %s, got %s", "", v.RequestBody().Get())
+	}
 	if rbl, _ := strconv.Atoi(v.RawRequestBodyLength().Get()); rbl != len(payload) {
 		t.Errorf("Expected %d, got %s", len(payload), v.RawRequestBodyLength().Get())
 	}
