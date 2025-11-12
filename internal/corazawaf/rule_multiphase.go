@@ -110,6 +110,10 @@ func minPhase(v variables.RuleVariable) types.RulePhase {
 		return types.PhaseUnknown
 	case variables.RequestBasename:
 		return types.PhaseRequestHeaders
+	case variables.RawRequestBody:
+		return types.PhaseRequestBody
+	case variables.RawRequestBodyLength:
+		return types.PhaseRequestBody
 	case variables.RequestBody:
 		return types.PhaseRequestBody
 	case variables.RequestBodyLength:

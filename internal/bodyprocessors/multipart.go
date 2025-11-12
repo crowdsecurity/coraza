@@ -4,12 +4,14 @@
 package bodyprocessors
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"mime"
 	"mime/multipart"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/corazawaf/coraza/v3/experimental/plugins/plugintypes"
@@ -20,6 +22,19 @@ import (
 type multipartBodyProcessor struct{}
 
 func (mbp *multipartBodyProcessor) ProcessRequest(reader io.Reader, v plugintypes.TransactionVariables, options plugintypes.BodyProcessorOptions) error {
+	// Set REQUEST_BODY no matter what
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		// Even though it's not technically a multipart error, we did not managed to read the body
+		v.MultipartStrictError().(*collections.Single).Set("1")
+		return err
+	}
+
+	v.RawRequestBody().(*collections.Single).Set(string(body))
+	v.RawRequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(body)))
+
+	reader = bytes.NewReader(body)
+
 	mimeType := options.Mime
 	storagePath := options.StoragePath
 	mediaType, params, err := mime.ParseMediaType(mimeType)
@@ -97,6 +112,7 @@ func (mbp *multipartBodyProcessor) ProcessRequest(reader io.Reader, v plugintype
 		}
 		filesCombinedSizeCol.(*collections.Single).Set(fmt.Sprintf("%d", totalSize))
 	}
+
 	return nil
 }
 

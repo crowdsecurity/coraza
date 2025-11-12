@@ -175,6 +175,10 @@ func (tx *Transaction) Collection(idx variables.RuleVariable) collection.Collect
 		return tx.variables.reqbodyProcessor
 	case variables.RequestBasename:
 		return tx.variables.requestBasename
+	case variables.RawRequestBody:
+		return tx.variables.rawRequestBody
+	case variables.RawRequestBodyLength:
+		return tx.variables.rawRequestBodyLength
 	case variables.RequestBody:
 		return tx.variables.requestBody
 	case variables.RequestBodyLength:
@@ -1713,6 +1717,8 @@ type TransactionVariables struct {
 	reqbodyProcessorError    *collections.Single
 	reqbodyProcessorErrorMsg *collections.Single
 	requestBasename          *collections.Single
+	rawRequestBody           *collections.Single
+	rawRequestBodyLength     *collections.Single
 	requestBody              *collections.Single
 	requestBodyLength        *collections.Single
 	requestCookies           *collections.NamedCollection
@@ -1782,6 +1788,8 @@ func NewTransactionVariables() *TransactionVariables {
 	v.reqbodyProcessorErrorMsg = collections.NewSingle(variables.ReqbodyProcessorErrorMsg)
 	v.reqbodyProcessor = collections.NewSingle(variables.ReqbodyProcessor)
 	v.requestBasename = collections.NewSingle(variables.RequestBasename)
+	v.rawRequestBody = collections.NewSingle(variables.RawRequestBody)
+	v.rawRequestBodyLength = collections.NewSingle(variables.RawRequestBodyLength)
 	v.requestBody = collections.NewSingle(variables.RequestBody)
 	v.requestBodyLength = collections.NewSingle(variables.RequestBodyLength)
 	v.requestFilename = collections.NewSingle(variables.RequestFilename)
@@ -1958,6 +1966,14 @@ func (v *TransactionVariables) RequestBodyProcessor() collection.Single {
 
 func (v *TransactionVariables) RequestBasename() collection.Single {
 	return v.requestBasename
+}
+
+func (v *TransactionVariables) RawRequestBody() collection.Single {
+	return v.rawRequestBody
+}
+
+func (v *TransactionVariables) RawRequestBodyLength() collection.Single {
+	return v.rawRequestBodyLength
 }
 
 func (v *TransactionVariables) RequestBody() collection.Single {
@@ -2299,6 +2315,12 @@ func (v *TransactionVariables) All(f func(v variables.RuleVariable, col collecti
 		return
 	}
 	if !f(variables.RequestBasename, v.requestBasename) {
+		return
+	}
+	if !f(variables.RawRequestBody, v.rawRequestBody) {
+		return
+	}
+	if !f(variables.RawRequestBodyLength, v.rawRequestBodyLength) {
 		return
 	}
 	if !f(variables.RequestBody, v.requestBody) {

@@ -38,10 +38,11 @@ var _ = profile.RegisterProfile(profile.Profile{
 								1010,
 								1000,
 								1011,
+								1300,
 							},
 							NonTriggeredRules: []int{
 								1111,
-								103,
+								1301,
 							},
 							Headers: map[string]string{
 								"Content-Type": "application/json",
@@ -69,6 +70,11 @@ SecRule ARGS:json.test3.2 "@eq 55" "id:1101, phase:2, log, block"
 
 # Both GET and POST can be matched for the same key
 SecRule ARGS:json.test "@eq 456" "id:1102, phase:2, log, block"
+
+#Make sure raw body was stored
+SecRule RAW_REQUEST_BODY "@contains test3" "id:1300, phase:2, log, block"
+#REQUEST_BODY should be empty for JSON processor
+SecRule REQUEST_BODY "@contains test3" "id:1301, phase:2, log, block"
 
 SecRule ARGS:json.test3 "@eq 3" "id: 1010, phase:2, log, block"
 SecRule RESPONSE_ARGS:json.test4 "@eq 3" "id: 1011, phase:4, log, block"

@@ -25,6 +25,9 @@ func (*rawBodyProcessor) ProcessRequest(reader io.Reader, v plugintypes.Transact
 
 	v.RequestBody().(*collections.Single).Set(b)
 	v.RequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(b)))
+
+	v.RawRequestBody().(*collections.Single).Set(b)
+	v.RawRequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(b)))
 	return nil
 }
 

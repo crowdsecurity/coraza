@@ -33,7 +33,7 @@ var _ = profile.RegisterProfile(profile.Profile{
 							Data: `<?xml version="1.0"?><xml><Cs7QAF attribute_name="attribute_value">test123</Cs7QAF></xml>`,
 						},
 						Output: profile.ExpectedOutput{
-							TriggeredRules:    []int{101, 102, 500},
+							TriggeredRules:    []int{101, 102, 104, 500},
 							NonTriggeredRules: []int{103},
 						},
 					},
@@ -47,6 +47,9 @@ SecRule REQUEST_HEADERS:content-type "application/xml" "id: 100, phase:1, pass, 
 SecRule REQBODY_PROCESSOR "XML" "id: 101,phase:2,log,block"
 SecRule XML:/*|XML://@* "test123" "id:102, phase:2,log,block"
 #REQUEST_BODY must be empty for XML body processor
+SecRule REQUEST_BODY "@contains test123" "id:103, phase:2,log,block"
+#RAW_REQUEST_BODY must contain the raw XML
+SecRule RAW_REQUEST_BODY "@contains test123" "id:104, phase:2,log,block"
 SecRule XML:/* "test123" "id:500, log"
 SecRule XML://@* "attribute_value" "id:501, log"
 `,
