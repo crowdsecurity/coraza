@@ -13,26 +13,26 @@
 
 Coraza is an open source, enterprise-grade, high performance Web Application Firewall (WAF) ready to protect your beloved applications. It is written in Go, supports ModSecurity SecLang rulesets and is 100% compatible with the OWASP Core Rule Set v4.
 
-* Website: <https://coraza.io>
-* Forum: [Github Discussions](https://github.com/corazawaf/coraza/discussions)
-* OWASP Slack Community (#coraza): <https://owasp.org/slack/invite>
-* Rule testing: [Coraza Playground](https://playground.coraza.io)
+- Website: <https://coraza.io>
+- Forum: [Github Discussions](https://github.com/corazawaf/coraza/discussions)
+- OWASP Slack Community (#coraza): <https://owasp.org/slack/invite>
+- Rule testing: [Coraza Playground](https://playground.coraza.io)
 
 <br/>
 
 Key Features:
 
-* ⇲ **Drop-in** - Coraza is an alternative engine that has partial compatibility with ~~Trustwave~~[OWASP ModSecurity Engine](https://github.com/owasp-modsecurity/modsecurity/) and supports industry-standard SecLang rule sets.
+- ⇲ **Drop-in** - Coraza is an alternative engine that has partial compatibility with ~~Trustwave~~[OWASP ModSecurity Engine](https://github.com/owasp-modsecurity/modsecurity/) and supports industry-standard SecLang rule sets.
 
-* 🔥 **Security** -  Coraza runs the [OWASP CRS](https://coreruleset.org) **v4** (Formerly known as Core Rule Set) to protect your web applications from a wide range of attacks, including the OWASP Top Ten, with a minimum of false alerts. CRS protects from many common attack categories including: SQL Injection (SQLi), Cross Site Scripting (XSS), PHP & Java Code Injection, HTTPoxy, Shellshock, Scripting/Scanner/Bot Detection & Metadata & Error Leakages. Note that older versions of the CRS are not compatible.
+- 🔥 **Security** - Coraza runs the [OWASP CRS](https://coreruleset.org) **v4** (Formerly known as Core Rule Set) to protect your web applications from a wide range of attacks, including the OWASP Top Ten, with a minimum of false alerts. CRS protects from many common attack categories including: SQL Injection (SQLi), Cross Site Scripting (XSS), PHP & Java Code Injection, HTTPoxy, Shellshock, Scripting/Scanner/Bot Detection & Metadata & Error Leakages. Note that older versions of the CRS are not compatible.
 
-* 🔌 **Extensible** - Coraza is a library at its core, with many integrations to deploy on-premise Web Application Firewall instances. Audit Loggers, persistence engines, operators, actions, create your own functionalities to extend Coraza as much as you want.
+- 🔌 **Extensible** - Coraza is a library at its core, with many integrations to deploy on-premise Web Application Firewall instances. Audit Loggers, persistence engines, operators, actions, create your own functionalities to extend Coraza as much as you want.
 
-* 🚀 **Performance** - From huge websites to small blogs, Coraza can handle the load with minimal performance impact. Check our [Benchmarks](https://coraza.io/docs/reference/benchmarks)
+- 🚀 **Performance** - From huge websites to small blogs, Coraza can handle the load with minimal performance impact. Check our [Benchmarks](https://coraza.io/docs/reference/benchmarks)
 
-* ﹡ **Simplicity** - Anyone is able to understand and modify the Coraza source code. It is easy to extend Coraza with new functionality.
+- ﹡ **Simplicity** - Anyone is able to understand and modify the Coraza source code. It is easy to extend Coraza with new functionality.
 
-* 💬 **Community** - Coraza is a community project, contributions are accepted and all ideas will be considered. Find contributor guidance in the [CONTRIBUTION](https://github.com/corazawaf/coraza/blob/main/CONTRIBUTING.md) document.
+- 💬 **Community** - Coraza is a community project, contributions are accepted and all ideas will be considered. Find contributor guidance in the [CONTRIBUTION](https://github.com/corazawaf/coraza/blob/main/CONTRIBUTING.md) document.
 
 <br/>
 
@@ -40,16 +40,16 @@ Key Features:
 
 The Coraza Project maintains implementations and plugins for the following servers:
 
-* [Caddy Reverse Proxy and Webserver Plugin](https://github.com/corazawaf/coraza-caddy) - stable, needs a maintainer
-* [Proxy WASM extension](https://github.com/corazawaf/coraza-proxy-wasm) for proxies with proxy-wasm support (e.g. Envoy) - stable, still under development
-* [HAProxy SPOE Plugin](https://github.com/corazawaf/coraza-spoa) - experimental
-* [Coraza C Library (For nginx, etc)](https://github.com/corazawaf/libcoraza) - experimental
-* [RuiQi WAF](https://github.com/HUAHUAI23/RuiQi) - Web management panel and enhanced traffic control for Coraza SPOA - experimental
+- [Caddy Reverse Proxy and Webserver Plugin](https://github.com/corazawaf/coraza-caddy) - stable, needs a maintainer
+- [Proxy WASM extension](https://github.com/corazawaf/coraza-proxy-wasm) for proxies with proxy-wasm support (e.g. Envoy) - stable, still under development
+- [HAProxy SPOE Plugin](https://github.com/corazawaf/coraza-spoa) - experimental
+- [Coraza C Library (For nginx, etc)](https://github.com/corazawaf/libcoraza) - experimental
+- [RuiQi WAF](https://github.com/HUAHUAI23/RuiQi) - Web management panel and enhanced traffic control for Coraza SPOA - experimental
 
 ## Prerequisites
 
-* Go v1.22+ or tinygo compiler
-* Linux distribution (Debian or Centos recommended), Windows or Mac.
+- Go v1.22+ or tinygo compiler
+- Linux distribution (Debian or Centos recommended), Windows or Mac.
 
 ## Coraza Core Usage
 
@@ -96,19 +96,17 @@ func main() {
 Go build tags can tweak certain functionality at compile-time. These are for advanced use cases only and do not
 have compatibility guarantees across minor versions - use with care.
 
-* `coraza.disabled_operators.*` - excludes the specified operator from compilation. Particularly useful if overriding
-the operator with `plugins.RegisterOperator` to reduce binary size / startup overhead.
-* `coraza.rule.multiphase_evaluation` - enables evaluation of rule variables in the phases that they are ready, not
-only the phase the rule is defined for.
-* `memoize_builders` - enables memoization of builders for regex and aho-corasick
-dictionaries to reduce memory consumption in deployments that launch several coraza
-instances. For more context check [this issue](https://github.com/corazawaf/coraza-caddy/issues/76)
-* `no_fs_access` - indicates that the target environment has no access to FS in order to not leverage OS' filesystem related functionality e.g. file body buffers.
-* `coraza.rule.case_sensitive_args_keys` - enables case-sensitive matching for ARGS keys, aligning Coraza behavior with RFC 3986 specification. It will be enabled by default in the next major version.
-<<<<<<< HEAD
-* `coraza.rule.no_regex_multiline` - disables enabling by default regexes multiline modifiers in `@rx` operator. It aligns with CRS expected behavior, reduces false positives and might improve performances. No multiline regexes by default will be enabled in the next major version. For more context check [this PR](https://github.com/corazawaf/coraza/pull/876)
-=======
->>>>>>> 77fdc675 (merge from upstream (#5))
+- `coraza.disabled_operators.*` - excludes the specified operator from compilation. Particularly useful if overriding
+  the operator with `plugins.RegisterOperator` to reduce binary size / startup overhead.
+- `coraza.rule.multiphase_evaluation` - enables evaluation of rule variables in the phases that they are ready, not
+  only the phase the rule is defined for.
+- `memoize_builders` - enables memoization of builders for regex and aho-corasick
+  dictionaries to reduce memory consumption in deployments that launch several coraza
+  instances. For more context check [this issue](https://github.com/corazawaf/coraza-caddy/issues/76)
+- `no_fs_access` - indicates that the target environment has no access to FS in order to not leverage OS' filesystem related functionality e.g. file body buffers.
+- `coraza.rule.case_sensitive_args_keys` - enables case-sensitive matching for ARGS keys, aligning Coraza behavior with RFC 3986 specification. It will be enabled by default in the next major version.
+- `coraza.rule.no_regex_multiline` - disables enabling by default regexes multiline modifiers in `@rx` operator. It aligns with CRS expected behavior, reduces false positives and might improve performances. No multiline regexes by default will be enabled in the next major version. For more context check [this PR](https://github.com/corazawaf/coraza/pull/876)
+- `coraza.rule.mandatory_rule_id_check` - enables strict rule id check where `id` action is required for all SecRule/SecAction.
 
 ## E2E Testing
 
@@ -130,9 +128,9 @@ Expected directives that have to be loaded and available flags can be found in [
 
 ## Tools
 
-* [Go FTW](https://github.com/coreruleset/go-ftw): Rule testing engine
-* [Coraza Playground](https://playground.coraza.io/): Sandbox rule testing web interface
-* [OWASP Core Ruleset](https://github.com/coreruleset/coreruleset/): Awesome rule set, compatible with Coraza
+- [Go FTW](https://github.com/coreruleset/go-ftw): Rule testing engine
+- [Coraza Playground](https://playground.coraza.io/): Sandbox rule testing web interface
+- [OWASP Core Ruleset](https://github.com/coreruleset/coreruleset/): Awesome rule set, compatible with Coraza
 
 ## Development
 
@@ -171,12 +169,12 @@ Our vulnerability management team will respond within 3 working days of your rep
 
 ## Thanks
 
-* OWASP Coreruleset team for the CRS and their help
-* Ivan Ristić for creating ModSecurity
+- OWASP Coreruleset team for the CRS and their help
+- Ivan Ristić for creating ModSecurity
 
 ### Coraza on X/Twitter
 
-* [@corazaio](https://twitter.com/corazaio)
+- [@corazaio](https://twitter.com/corazaio)
 
 ## Donations
 

@@ -6,6 +6,7 @@ package bodyprocessors
 import (
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/tidwall/gjson"
 
@@ -18,48 +19,68 @@ type jsonBodyProcessor struct{}
 var _ plugintypes.BodyProcessor = &jsonBodyProcessor{}
 
 func (js *jsonBodyProcessor) ProcessRequest(reader io.Reader, v plugintypes.TransactionVariables, _ plugintypes.BodyProcessorOptions) error {
-	bodyBytes, err := io.ReadAll(reader)
+	// Read the entire body to store it and process it
+	s := strings.Builder{}
+	if _, err := io.Copy(&s, reader); err != nil {
+		return err
+	}
+	ss := s.String()
+
+	// Process as normal
+	col := v.ArgsPost()
+	data, err := readJSON(ss)
 	if err != nil {
 		return err
 	}
-	bodyStr := string(bodyBytes)
+
+	for k, val := range data {
+		col.SetIndex(k, 0, val)
+	}
 
 	// Always set RAW_REQUEST_BODY
-	v.RawRequestBody().(*collections.Single).Set(bodyStr)
-	v.RawRequestBodyLength().(*collections.Single).Set(strconv.Itoa(len(bodyBytes)))
+	v.RawRequestBody().(*collections.Single).Set(ss)
+	v.RawRequestBodyLength().(*collections.Single).Set(strconv.Itoa(s.Len()))
 
-	json := gjson.Parse(bodyStr)
-	col := v.ArgsPost()
-	res := make(map[string]string)
-	key := []byte("json")
-	readItems(json, key, res)
-
-	for k, val := range res {
-		col.SetIndex(k, 0, val)
+	// Store the raw JSON in the TX variable for validateSchema
+	// This is needed because RequestBody is a Single interface without a Set method
+	if txVar := v.TX(); txVar != nil {
+		// Store the content type and raw body
+		txVar.Set("json_request_body", []string{ss})
 	}
 
 	return nil
 }
 
 func (js *jsonBodyProcessor) ProcessResponse(reader io.Reader, v plugintypes.TransactionVariables, _ plugintypes.BodyProcessorOptions) error {
+	// Read the entire body to store it and process it
+	s := strings.Builder{}
+	if _, err := io.Copy(&s, reader); err != nil {
+		return err
+	}
+	ss := s.String()
+
+	// Process as normal
 	col := v.ResponseArgs()
-	data, err := readJSON(reader)
+	data, err := readJSON(ss)
 	if err != nil {
 		return err
 	}
 	for key, value := range data {
 		col.SetIndex(key, 0, value)
 	}
+
+	// Store the raw JSON in the TX variable for validateSchema
+	// This is needed because ResponseBody is a Single interface without a Set method
+	if txVar := v.TX(); txVar != nil && v.ResponseBody() != nil {
+		// Store the content type and raw body
+		txVar.Set("json_response_body", []string{ss})
+	}
+
 	return nil
 }
 
-func readJSON(reader io.Reader) (map[string]string, error) {
-	bodyBytes, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-
-	json := gjson.ParseBytes(bodyBytes)
+func readJSON(s string) (map[string]string, error) {
+	json := gjson.Parse(s)
 	res := make(map[string]string)
 	key := []byte("json")
 	readItems(json, key, res)

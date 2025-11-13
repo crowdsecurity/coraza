@@ -39,25 +39,35 @@ func TestVariables(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = p.FromString(`SecRule &REQUEST_COOKIES_NAMES:'/^(?:phpMyAdminphp|MyAdmin_https)$/' "id:2"`)
+	err = p.FromString(`SecRule &REQUEST_COOKIES_NAMES:'/^(?:phpMyAdminphp|MyAdmin_https)$/' "" "id:2"`)
 	if err != nil {
 		t.Error(err)
 	}
-	err = p.FromString(`SecRule &REQUEST_COOKIES_NAMES:'/^(?:phpMyAdminphp|MyAdmin_https)$/'|ARGS:test "id:3"`)
+	err = p.FromString(`SecRule &REQUEST_COOKIES_NAMES:'/^(?:phpMyAdminphp|MyAdmin_https)$/'|ARGS:test "" "id:3"`)
 	if err != nil {
 		t.Error(err)
 	}
-	err = p.FromString(`SecRule &REQUEST_COOKIES_NAMES:'/.*/'|ARGS:/a|b/ "id:4"`)
+	err = p.FromString(`SecRule &REQUEST_COOKIES_NAMES:'/.*/'|ARGS:/a|b/ "" "id:4"`)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = p.FromString(`SecRule &REQUEST_COOKIES_NAMES:'/.*/'|ARGS:/a|b/|XML:/*|ARGS|REQUEST_HEADERS "id:5"`)
+	err = p.FromString(`SecRule &REQUEST_COOKIES_NAMES:'/.*/'|ARGS:/a|b/|XML:/*|ARGS|REQUEST_HEADERS "" "id:5"`)
 	if err != nil {
 		t.Error(err)
 	}
 
 	err = p.FromString(`SecRule XML:/*|XML://@* "" "id:6"`)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = p.FromString(`SecRule REQUEST_HEADERS "@rx C:\\" "id:7"`)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = p.FromString(`SecRule REQUEST_HEADERS "@contains \"" "id:8"`)
 	if err != nil {
 		t.Error(err)
 	}
