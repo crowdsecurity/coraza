@@ -6,6 +6,7 @@ package bodyprocessors
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"io"
 	"strconv"
 	"strings"
@@ -52,7 +53,7 @@ func readXML(reader io.Reader) ([]string, []string, error) {
 	dec.Entity = xml.HTMLEntity
 	for {
 		token, err := dec.Token()
-		if err != nil && err != io.EOF {
+		if err != nil && err != io.EOF && !isUnexpectedEOFXMLSyntaxError(err) {
 			return nil, nil, err
 		}
 		if token == nil {
@@ -70,6 +71,11 @@ func readXML(reader io.Reader) ([]string, []string, error) {
 		}
 	}
 	return attrs, content, nil
+}
+
+func isUnexpectedEOFXMLSyntaxError(err error) bool {
+	var serr *xml.SyntaxError
+	return errors.As(err, &serr) && serr.Msg == "unexpected EOF"
 }
 
 var (

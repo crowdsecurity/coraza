@@ -47,7 +47,7 @@ var _ = profile.RegisterProfile(profile.Profile{
 							Headers: map[string]string{
 								"Content-Type": "application/json",
 							},
-							Data: `{"test":123, "test2": 456, "test3": [22, 44, 55], "test4": 3}`,
+							Data: `{"test": 123, "test2": 456, "test3": [22, 44, 55], "test4": 3}`,
 						},
 					},
 				},

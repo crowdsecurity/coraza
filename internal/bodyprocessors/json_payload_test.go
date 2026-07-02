@@ -26,7 +26,8 @@ func TestJSONPayload(t *testing.T) {
 
 	v := corazawaf.NewTransactionVariables()
 	if err := j.ProcessRequest(strings.NewReader(payload), v, plugintypes.BodyProcessorOptions{
-		Mime: "application/json",
+		Mime:                      "application/json",
+		RequestBodyRecursionLimit: 10,
 	}); err != nil {
 		t.Fatal(err)
 	}
