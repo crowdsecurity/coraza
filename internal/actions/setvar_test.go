@@ -67,6 +67,7 @@ func TestSetvarEvaluate(t *testing.T) {
 		init2                    string
 		expectInvalidSyntaxError bool
 		expectNewVarValue        string
+		logLevel                 debuglog.Level
 	}{
 		{
 			name:                     "Numerical operation + with existing variable",
@@ -74,6 +75,7 @@ func TestSetvarEvaluate(t *testing.T) {
 			init2:                    "TX.newvar=+%{tx.var}",
 			expectInvalidSyntaxError: false,
 			expectNewVarValue:        "5",
+			logLevel:                 debuglog.LevelError,
 		},
 		{
 			name:                     "Numerical operation - with existing variable",
@@ -81,6 +83,7 @@ func TestSetvarEvaluate(t *testing.T) {
 			init2:                    "TX.newvar=-%{tx.var}",
 			expectInvalidSyntaxError: false,
 			expectNewVarValue:        "-5",
+			logLevel:                 debuglog.LevelError,
 		},
 		{
 			name:                     "Numerical operation - with existing negative variable",
@@ -88,35 +91,40 @@ func TestSetvarEvaluate(t *testing.T) {
 			init2:                    "TX.newvar=+5",
 			expectInvalidSyntaxError: false,
 			expectNewVarValue:        "0",
+			logLevel:                 debuglog.LevelError,
 		},
 		{
 			name:                     "Numerical operation + with missing (or non-numerical) variable",
 			init:                     "TX.newvar=+%{tx.missingvar}",
 			expectInvalidSyntaxError: true,
+			logLevel:                 debuglog.LevelDebug,
 		},
 		{
 			name:                     "Numerical operation - with missing (or non-numerical) variable",
 			init:                     "TX.newvar=-%{tx.missingvar}",
 			expectInvalidSyntaxError: true,
+			logLevel:                 debuglog.LevelDebug,
 		},
 		{
 			name:                     "Non Numerical Operation - If the value starts with -",
 			init:                     "TX.newvar=----expected_value",
 			expectInvalidSyntaxError: false,
 			expectNewVarValue:        "----expected_value",
+			logLevel:                 debuglog.LevelError,
 		},
 		{
 			name:                     "Non Numerical Operation - If the value starts with +",
 			init:                     "TX.newvar=+++expected_value",
 			expectInvalidSyntaxError: false,
 			expectNewVarValue:        "+++expected_value",
+			logLevel:                 debuglog.LevelError,
 		},
 	}
 
 	for _, tt := range tests {
 		logsBuf := &bytes.Buffer{}
 
-		logger := debuglog.Default().WithLevel(debuglog.LevelWarn).WithOutput(logsBuf)
+		logger := debuglog.Default().WithLevel(tt.logLevel).WithOutput(logsBuf)
 
 		t.Run(tt.name, func(t *testing.T) {
 			defer logsBuf.Reset()
