@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"regexp"
 	"runtime/debug"
 	"strconv"
@@ -1184,6 +1185,21 @@ func TestRelevantAuditLoggingWithoutAuditFlag(t *testing.T) {
 	}
 }
 
+// TestTransactionFieldCount is a tripwire against pool-reuse state leaks such as
+// https://github.com/corazawaf/coraza/issues/1640. Transactions are pooled and
+// reused, so every field must be reset before a transaction is handed out again
+// (in newTransaction, or in place in Close); a field left set leaks into the next
+// request. This test fails whenever a field is added to or removed from
+// Transaction: when it does, make sure the field is reset on pool reuse, then
+// update wantFields.
+func TestTransactionFieldCount(t *testing.T) {
+	const wantFields = 35
+	if got := reflect.TypeFor[Transaction]().NumField(); got != wantFields {
+		t.Fatalf("Transaction has %d fields, want %d. If you added a field, make sure it "+
+			"is reset on pool reuse in newTransaction() (or Close()), then update wantFields.", got, wantFields)
+	}
+}
+
 func TestLogCallback(t *testing.T) {
 
 	testCases := []struct {
@@ -1367,6 +1383,41 @@ func TestRequestBodyProcessingAlgorithm(t *testing.T) {
 	}
 	if err := tx.Close(); err != nil {
 		t.Fatalf("Failed to close transaction: %s", err.Error())
+	}
+}
+
+// TestDuplicateContentTypeHeaderUsesFirstForBodyProcessorSelection is a
+// regression test for GHSA-w253-m66g-rx24: it needs two Content-Type headers
+// on one request, which testing/profile's StageInput.Headers
+// (map[string]string) cannot express, so it cannot be a profile.
+//
+// Only the first Content-Type header may select the body processor, matching
+// ProcessRequestBody's mimeType and a typical backend's Header.Get. Otherwise
+// e.g. a genuine multipart body gets the URLENCODED processor, which parses
+// it without error and leaves ARGS_POST and FILES empty.
+func TestDuplicateContentTypeHeaderUsesFirstForBodyProcessorSelection(t *testing.T) {
+	tests := []struct {
+		name    string
+		headers []string
+		want    string
+	}{
+		{"single urlencoded", []string{"application/x-www-form-urlencoded"}, "URLENCODED"},
+		{"multipart then urlencoded", []string{"multipart/form-data; boundary=XyZ", "application/x-www-form-urlencoded"}, "MULTIPART"},
+		{"urlencoded then multipart", []string{"application/x-www-form-urlencoded", "multipart/form-data; boundary=XyZ"}, "URLENCODED"},
+		{"unrecognized then multipart", []string{"text/plain", "multipart/form-data; boundary=XyZ"}, ""},
+		{"json then urlencoded", []string{"application/json", "application/x-www-form-urlencoded"}, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tx := NewWAF().NewTransaction()
+			defer func() { _ = tx.Close() }()
+			for _, h := range tt.headers {
+				tx.AddRequestHeader("Content-Type", h)
+			}
+			if got := tx.variables.reqbodyProcessor.Get(); got != tt.want {
+				t.Errorf("reqbodyProcessor = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 
@@ -1713,7 +1764,7 @@ func BenchmarkTxGetField(b *testing.B) {
 	rvp := ruleVariableParams{
 		Variable: variables.Args,
 	}
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		tx.GetField(rvp)
 	}
 	if err := tx.Close(); err != nil {
@@ -1745,8 +1796,8 @@ func BenchmarkTxGetFieldWithShortRegexException(b *testing.B) {
 		},
 	}
 	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		tx.GetField(rvp)
 	}
 	b.StopTimer()
@@ -1804,7 +1855,7 @@ func TestTxProcessURI(t *testing.T) {
 }
 
 func BenchmarkTransactionCreation(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		makeTransaction(b)
 	}
 }
@@ -1846,8 +1897,8 @@ func makeTransactionTimestamped(t testing.TB) *Transaction {
 func BenchmarkTransactionTimestamped(b *testing.B) {
 	tx := NewWAF().NewTransaction()
 	tx.Timestamp = time.Now().Unix()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		tx.setTimeVariables()
 	}
 }
@@ -2162,6 +2213,76 @@ func TestAddResponseArgsWithOverlimit(t *testing.T) {
 	}
 }
 
+// TestAddArgsRepeatedKeyOverlimit is a regression test for
+// GHSA-3ww9-vw83-9w5x: checkArgumentLimit used to compare against Len (the
+// number of distinct keys), so many values added under a single repeated key
+// never tripped the limit no matter how many times Add was called. It must
+// now be bounded by TotalValues (every individual value) instead.
+func TestAddArgsRepeatedKeyOverlimit(t *testing.T) {
+	const limit = 5
+	const attempts = 1000
+
+	adders := map[string]func(tx *Transaction, key, value string){
+		"get":      func(tx *Transaction, key, value string) { tx.AddGetRequestArgument(key, value) },
+		"post":     func(tx *Transaction, key, value string) { tx.AddPostRequestArgument(key, value) },
+		"path":     func(tx *Transaction, key, value string) { tx.AddPathRequestArgument(key, value) },
+		"response": func(tx *Transaction, key, value string) { tx.AddResponseArgument(key, value) },
+	}
+
+	for name, add := range adders {
+		t.Run(name, func(t *testing.T) {
+			waf := NewWAF()
+			tx := waf.NewTransaction()
+			tx.WAF.ArgumentLimit = limit
+			for i := 0; i < attempts; i++ {
+				add(tx, "repeated", "samplevalue")
+			}
+
+			var total int
+			switch name {
+			case "get":
+				total = tx.variables.argsGet.TotalValues()
+			case "post":
+				total = tx.variables.argsPost.TotalValues()
+			case "path":
+				total = tx.variables.argsPath.TotalValues()
+			case "response":
+				total = tx.variables.responseArgs.TotalValues()
+			}
+			if total > limit {
+				t.Fatalf("expected at most %d total values under a repeated key, got %d", limit, total)
+			}
+
+			if err := tx.Close(); err != nil {
+				t.Fatalf("Failed to close transaction: %s", err.Error())
+			}
+		})
+	}
+}
+
+// TestExtractGetArgumentsRepeatedKeyOverlimit confirms ExtractGetArguments
+// (the query-string entry point, as opposed to calling AddGetRequestArgument
+// directly) is bounded the same way, and sets ARGUMENTS_LIMIT_REACHED.
+func TestExtractGetArgumentsRepeatedKeyOverlimit(t *testing.T) {
+	waf := NewWAF()
+	tx := waf.NewTransaction()
+	tx.WAF.ArgumentLimit = 5
+
+	uri := "/x?" + strings.TrimSuffix(strings.Repeat("a=1&", 1000), "&")
+	tx.ExtractGetArguments(uri)
+
+	if got := tx.variables.argsGet.TotalValues(); got > 5 {
+		t.Fatalf("expected at most 5 total ARGS_GET values, got %d", got)
+	}
+	if tx.variables.argumentsLimitReached.Get() != "1" {
+		t.Error("expected ARGUMENTS_LIMIT_REACHED to be set")
+	}
+
+	if err := tx.Close(); err != nil {
+		t.Fatalf("Failed to close transaction: %s", err.Error())
+	}
+}
+
 func TestResponseBodyForceProcessing(t *testing.T) {
 	waf := NewWAF()
 	waf.ResponseBodyAccess = true
@@ -2397,10 +2518,11 @@ func TestRequestFilename(t *testing.T) {
 			uri:      "///foo/bar",
 			expected: "///foo/bar",
 		},
-		{ // This is a bug. This test should be adapted when the issue is fixed.
+		{ // url.ParseRequestURI fails on invalid percent-encoding; the "?" fallback
+			// split still recovers the path/query boundary. See GHSA-x26q-wvhg-fh4m.
 			name:     "invalid encoding",
 			uri:      "/foo%zz?a=b",
-			expected: "/foo%zz?a=b",
+			expected: "/foo%zz",
 		},
 		{
 			name:     "valid encoding",
@@ -2428,6 +2550,29 @@ func TestRequestFilename(t *testing.T) {
 				t.Fatalf("Expected REQUEST_FILENAME %q, got %q", test.expected, tx.variables.requestFilename.Get())
 			}
 		})
+	}
+}
+
+// GHSA-x26q-wvhg-fh4m: a URI containing raw control bytes (e.g. a NUL, as a
+// non-net/http integration like coraza-spoa or coraza-proxy-wasm might forward)
+// fails url.ParseRequestURI, and previously left QUERY_STRING/ARGS_GET empty,
+// silently dropping the entire attack payload from GET-side rule matching.
+func TestProcessURIFallbackOnParseError(t *testing.T) {
+	waf := NewWAF()
+	tx := waf.NewTransaction()
+	tx.ProcessURI("/search?q=ATTACK_HERE_XYZ\x00&y=1", http.MethodGet, "HTTP/1.1")
+
+	if got := tx.variables.uriParseError.Get(); got != "1" {
+		t.Errorf("Expected URI_PARSE_ERROR to be \"1\", got %q", got)
+	}
+	if got := tx.variables.queryString.Get(); got != "q=ATTACK_HERE_XYZ\x00&y=1" {
+		t.Errorf("Expected QUERY_STRING to be recovered from the raw URI, got %q", got)
+	}
+	if got := tx.variables.argsGet.Get("q"); len(got) == 0 || got[0] != "ATTACK_HERE_XYZ\x00" {
+		t.Errorf("Expected ARGS_GET q to be populated on best effort, got %v", got)
+	}
+	if got := tx.variables.requestURIRaw.Get(); got != "/search?q=ATTACK_HERE_XYZ\x00&y=1" {
+		t.Errorf("Expected REQUEST_URI_RAW to hold the untouched URI, got %q", got)
 	}
 }
 
@@ -2472,8 +2617,8 @@ func BenchmarkRuleEvalWithTransformations(b *testing.B) {
 		b.Fatalf("unexpected interruption during request headers processing: %+v", it)
 	}
 	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		waf.Rules.Eval(types.PhaseRequestHeaders, tx)
 	}
 }
@@ -2658,8 +2803,8 @@ func BenchmarkRuleEvalWithRemovedRules(b *testing.B) {
 	}
 
 	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		waf.Rules.Eval(types.PhaseRequestHeaders, tx)
 	}
 }
