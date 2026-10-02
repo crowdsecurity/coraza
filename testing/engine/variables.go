@@ -177,3 +177,39 @@ SecRule ARGS:key2[] "@contains newValue" "id:11,phase:2,pass,setvar:'tx.macro_ex
 SecRule ARGS_POST:key2[name] "@contains PaYlOaD" "id:12,phase:2,pass,log,logdata:'Message from rule 12: %{MATCHED_VAR_NAME}, macro expansion: %{ARGS_POST.key2[name]}'"
 `,
 })
+
+// Collections share their FindAll result between rules within a phase, so
+// one rule's view of a collection must not leak into the next rule's.
+var _ = profile.RegisterProfile(profile.Profile{
+	Meta: profile.Meta{
+		Author:      "Sebastien Blot",
+		Description: "Rules reading the same collection do not affect each other",
+		Enabled:     true,
+		Name:        "variables_shared_collections.yaml",
+	},
+	Tests: []profile.Test{
+		{
+			Title: "concatenated and excepted collections",
+			Stages: []profile.Stage{
+				{
+					Stage: profile.SubStage{
+						Input: profile.StageInput{
+							URI: "/?a=x&b=y&c=y&d=y&e=y&f=y&g=y&h=y",
+						},
+						Output: profile.ExpectedOutput{
+							TriggeredRules: []int{2, 3, 4, 5},
+							LogContains:    `[msg "child ARGS_GET:a"]`,
+						},
+					},
+				},
+			},
+		},
+	},
+	Rules: `
+SecRuleEngine On
+SecRule ARGS "@streq x" "id:2,phase:1,pass,log"
+SecRule ARGS_GET "@streq x" "id:3,phase:1,pass,log,msg:'child %{MATCHED_VAR_NAME}'"
+SecRule ARGS_GET|!ARGS_GET:a "@streq y" "id:4,phase:1,pass,log"
+SecRule ARGS_GET "@streq x" "id:5,phase:1,pass,log"
+`,
+})

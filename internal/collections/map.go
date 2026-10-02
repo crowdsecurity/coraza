@@ -22,6 +22,17 @@ type Map struct {
 	// summing len(values) across every key on each call made checkArgumentLimit
 	// (called once per Add) quadratic in the number of distinct keys.
 	totalValues int
+	// version changes on every mutation, so views can tell when to rebuild.
+	version uint64
+	// all caches FindAll: rules ask for the same collection over and over
+	// within a phase. Callers must not modify it.
+	all        []types.MatchData
+	allVersion uint64
+}
+
+func (c *Map) touch() {
+	c.version++
+	c.all = nil
 }
 
 var _ collection.Map = &Map{}
@@ -121,8 +132,12 @@ func (c *Map) FindString(key string) []types.MatchData {
 	return result
 }
 
-// FindAll returns all map elements.
+// FindAll returns all map elements. The result is shared until the next
+// mutation of the map, callers must not modify it.
 func (c *Map) FindAll() []types.MatchData {
+	if c.all != nil && c.allVersion == c.version {
+		return c.all
+	}
 	n := 0
 	for _, data := range c.data {
 		n += len(data)
@@ -144,11 +159,13 @@ func (c *Map) FindAll() []types.MatchData {
 			i++
 		}
 	}
+	c.all, c.allVersion = result, c.version
 	return result
 }
 
 // Add adds a new key-value pair to the map.
 func (c *Map) Add(key string, value string) {
+	c.touch()
 	aVal := keyValue{key: key, value: value}
 	if !c.isCaseSensitive {
 		key = strings.ToLower(key)
@@ -159,6 +176,7 @@ func (c *Map) Add(key string, value string) {
 
 // Sets the value of a key with the array of strings passed. If the key already exists, it will be overwritten.
 func (c *Map) Set(key string, values []string) {
+	c.touch()
 	originalKey := key
 	if !c.isCaseSensitive {
 		key = strings.ToLower(key)
@@ -179,6 +197,7 @@ func (c *Map) Set(key string, values []string) {
 
 // SetIndex sets the value of a key at the specified index. If the key already exists, it will be overwritten.
 func (c *Map) SetIndex(key string, index int, value string) {
+	c.touch()
 	originalKey := key
 	if !c.isCaseSensitive {
 		key = strings.ToLower(key)
@@ -200,6 +219,7 @@ func (c *Map) SetIndex(key string, index int, value string) {
 
 // Remove removes a key/value from the map.
 func (c *Map) Remove(key string) {
+	c.touch()
 	if !c.isCaseSensitive {
 		key = strings.ToLower(key)
 	}
@@ -217,6 +237,7 @@ func (c *Map) Name() string {
 
 // Reset removes all key/value pairs from the map.
 func (c *Map) Reset() {
+	c.touch()
 	for k := range c.data {
 		delete(c.data, k)
 	}

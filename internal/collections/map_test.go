@@ -340,3 +340,30 @@ func BenchmarkTxSetGet(b *testing.B) {
 	})
 	b.ReportAllocs()
 }
+
+// FindAll caches its result until the next mutation: every mutator must
+// invalidate it, or rules see stale data for the rest of the phase.
+func TestMapFindAllInvalidation(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(c *Map)
+		want   []string
+	}{
+		{name: "no mutation", mutate: func(*Map) {}, want: []string{"v1", "v2"}},
+		{name: "Add", mutate: func(c *Map) { c.Add("k3", "v3") }, want: []string{"v1", "v2", "v3"}},
+		{name: "Set", mutate: func(c *Map) { c.Set("k1", []string{"new"}) }, want: []string{"new", "v2"}},
+		{name: "SetIndex", mutate: func(c *Map) { c.SetIndex("k1", 0, "new") }, want: []string{"new", "v2"}},
+		{name: "Remove", mutate: func(c *Map) { c.Remove("k1") }, want: []string{"v2"}},
+		{name: "Reset", mutate: func(c *Map) { c.Reset() }, want: nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := NewMap(variables.ArgsGet)
+			c.Add("k1", "v1")
+			c.Add("k2", "v2")
+			assertUnorderedValuesMatch(t, c.FindAll(), "v1", "v2")
+			tt.mutate(c)
+			assertUnorderedValuesMatch(t, c.FindAll(), tt.want...)
+		})
+	}
+}
