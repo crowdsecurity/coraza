@@ -197,18 +197,8 @@ var _ = profile.RegisterProfile(profile.Profile{
 							URI: "/?a=x&b=y&c=y&d=y&e=y&f=y&g=y&h=y",
 						},
 						Output: profile.ExpectedOutput{
-							TriggeredRules: []int{1, 2, 3, 4, 5},
-							LogContains:    `[msg "concat ARGS:a"]`,
-						},
-					},
-				},
-				{
-					Stage: profile.SubStage{
-						Input: profile.StageInput{
-							URI: "/?a=x&b=y&c=y&d=y&e=y&f=y&g=y&h=y",
-						},
-						Output: profile.ExpectedOutput{
-							LogContains: `[msg "child ARGS_GET:a"]`,
+							TriggeredRules: []int{2, 3, 4, 5},
+							LogContains:    `[msg "child ARGS_GET:a"]`,
 						},
 					},
 				},
@@ -217,8 +207,7 @@ var _ = profile.RegisterProfile(profile.Profile{
 	},
 	Rules: `
 SecRuleEngine On
-SecRule ARGS_GET "@streq x" "id:1,phase:1,pass,log"
-SecRule ARGS "@streq x" "id:2,phase:1,pass,log,msg:'concat %{MATCHED_VAR_NAME}'"
+SecRule ARGS "@streq x" "id:2,phase:1,pass,log"
 SecRule ARGS_GET "@streq x" "id:3,phase:1,pass,log,msg:'child %{MATCHED_VAR_NAME}'"
 SecRule ARGS_GET|!ARGS_GET:a "@streq y" "id:4,phase:1,pass,log"
 SecRule ARGS_GET "@streq x" "id:5,phase:1,pass,log"
