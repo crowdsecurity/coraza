@@ -681,27 +681,33 @@ func (tx *Transaction) GetField(rv ruleVariableParams) []types.MatchData {
 		matches = col.FindAll()
 	}
 
-	// in the most common scenario filteredMatches length will be
-	// the same as matches length, so we avoid allocating per result.
-	// We reuse the matches slice to store filtered results avoiding extra allocation.
-	filteredCount := 0
-	for _, c := range matches {
-		isException := false
-		lkey := strings.ToLower(c.Key())
-		for _, ex := range rv.Exceptions {
-			// KeyStr is only meaningful without KeyRx: a regex exception from ctl
-			// carries an empty KeyStr, which would otherwise match a key named "".
-			if (ex.KeyRx != nil && ex.KeyRx.MatchString(lkey)) || (ex.KeyRx == nil && (ex.KeyStr == "" || strings.ToLower(ex.KeyStr) == lkey)) {
-				isException = true
-				break
+	// Matches may be shared with the collection: only copy when an exception
+	// actually removes something.
+	if len(rv.Exceptions) > 0 {
+		var filtered []types.MatchData
+		for i, c := range matches {
+			isException := false
+			lkey := strings.ToLower(c.Key())
+			for _, ex := range rv.Exceptions {
+				// KeyStr is only meaningful without KeyRx: a regex exception from ctl
+				// carries an empty KeyStr, which would otherwise match a key named "".
+				if (ex.KeyRx != nil && ex.KeyRx.MatchString(lkey)) || (ex.KeyRx == nil && (ex.KeyStr == "" || strings.ToLower(ex.KeyStr) == lkey)) {
+					isException = true
+					break
+				}
+			}
+			switch {
+			case isException && filtered == nil:
+				filtered = make([]types.MatchData, i, len(matches))
+				copy(filtered, matches[:i])
+			case !isException && filtered != nil:
+				filtered = append(filtered, c)
 			}
 		}
-		if !isException {
-			matches[filteredCount] = c
-			filteredCount++
+		if filtered != nil {
+			matches = filtered
 		}
 	}
-	matches = matches[:filteredCount]
 
 	if rv.Count {
 		count := len(matches)

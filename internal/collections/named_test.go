@@ -122,4 +122,9 @@ func TestNames(t *testing.T) {
 	if len(r) != 0 {
 		t.Errorf("Error finding nonexistent regex, got %d instead of 0", len(r))
 	}
+
+	assertUnorderedValuesMatch(t, names.FindAll(), "key", "key2", "key2")
+	// FindAll is cached: a mutation of the underlying collection must show up.
+	c.Add("key3", "value4")
+	assertUnorderedValuesMatch(t, names.FindAll(), "key", "key2", "key2", "key3")
 }
