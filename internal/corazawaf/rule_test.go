@@ -623,7 +623,7 @@ func TestTransformArgSimple(t *testing.T) {
 	rule := NewRule()
 	_ = rule.AddTransformation("AppendA", transformationAppendA)
 	_ = rule.AddTransformation("AppendB", transformationAppendB)
-	arg, errs := rule.transformArg(md, 0, transformationCache)
+	arg, errs := rule.transformArg(md, transformationCache)
 	if errs != nil {
 		t.Fatalf("Unexpected errors executing transformations: %v", errs)
 	}
@@ -635,7 +635,7 @@ func TestTransformArgSimple(t *testing.T) {
 		t.Errorf("Expected 2 transformations in cache (one per step), got %d", len(transformationCache))
 	}
 	// Repeating the same transformation, expecting still two elements in the cache (cache hit)
-	arg, errs = rule.transformArg(md, 0, transformationCache)
+	arg, errs = rule.transformArg(md, transformationCache)
 	if errs != nil {
 		t.Fatalf("Unexpected errors executing transformations: %v", errs)
 	}
@@ -656,7 +656,7 @@ func TestTransformArgNoCacheForTXVariable(t *testing.T) {
 	}
 	rule := NewRule()
 	_ = rule.AddTransformation("AppendA", transformationAppendA)
-	arg, errs := rule.transformArg(md, 0, transformationCache)
+	arg, errs := rule.transformArg(md, transformationCache)
 	if errs != nil {
 		t.Fatalf("Unexpected errors executing transformations: %v", errs)
 	}
@@ -686,7 +686,7 @@ func TestTransformArgPrefixSharing(t *testing.T) {
 	_ = rule2.AddTransformation("AppendB", transformationAppendB)
 
 	// Evaluate rule1 first — caches the AppendA intermediate
-	arg1, errs := rule1.transformArg(md, 0, transformationCache)
+	arg1, errs := rule1.transformArg(md, transformationCache)
 	if errs != nil {
 		t.Fatalf("Unexpected errors: %v", errs)
 	}
@@ -698,7 +698,7 @@ func TestTransformArgPrefixSharing(t *testing.T) {
 	}
 
 	// Evaluate rule2 — should reuse the cached AppendA result and only compute AppendB
-	arg2, errs := rule2.transformArg(md, 0, transformationCache)
+	arg2, errs := rule2.transformArg(md, transformationCache)
 	if errs != nil {
 		t.Fatalf("Unexpected errors: %v", errs)
 	}
@@ -708,6 +708,25 @@ func TestTransformArgPrefixSharing(t *testing.T) {
 	// Should now have 2 entries: AppendA (shared) and AppendA+AppendB
 	if len(transformationCache) != 2 {
 		t.Errorf("Expected 2 cache entries after rule2 (prefix reuse), got %d", len(transformationCache))
+	}
+}
+
+// Not a profile: whether a profile reaches the collision depends on map iteration order.
+func TestTransformArgRepeatedKeyDifferentValues(t *testing.T) {
+	transformationCache := map[transformationKey]transformationValue{}
+	// Repeated keys share one key string, as when args are added from a map[string][]string.
+	key := "q"
+	benign := &corazarules.MatchData{Variable_: variables.ArgsGet, Key_: key, Value_: "benign"}
+	evil := &corazarules.MatchData{Variable_: variables.ArgsGet, Key_: key, Value_: "evil"}
+
+	rule := NewRule()
+	_ = rule.AddTransformation("AppendA", transformationAppendA)
+
+	if arg, _ := rule.transformArg(benign, transformationCache); arg != "benignA" {
+		t.Errorf("Expected \"benignA\", got %q", arg)
+	}
+	if arg, _ := rule.transformArg(evil, transformationCache); arg != "evilA" {
+		t.Errorf("Expected \"evilA\", got %q (cached result of another value)", arg)
 	}
 }
 
@@ -730,8 +749,8 @@ func TestClearTransformationsResetsID(t *testing.T) {
 	_ = ruleB.AddTransformation("AppendA", transformationAppendA)
 	_ = ruleB.AddTransformation("AppendB", transformationAppendB)
 
-	argA, _ := ruleA.transformArg(md, 0, transformationCache)
-	argB, _ := ruleB.transformArg(md, 0, transformationCache)
+	argA, _ := ruleA.transformArg(md, transformationCache)
+	argB, _ := ruleB.transformArg(md, transformationCache)
 
 	if argA != "testB" {
 		t.Errorf("Rule A (t:none resets): expected \"testB\", got %q", argA)

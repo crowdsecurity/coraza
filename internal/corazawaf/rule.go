@@ -265,12 +265,12 @@ func (r *Rule) doEvaluate(logger debuglog.Logger, phase types.RulePhase, tx *Tra
 			args := make([]string, 1)
 			var errs []error
 			var argsLen int
-			for i, arg := range values {
+			for _, arg := range values {
 				if r.MultiMatch {
 					args, errs = r.transformMultiMatchArg(arg)
 					argsLen = len(args)
 				} else {
-					args[0], errs = r.transformArg(arg, i, cache)
+					args[0], errs = r.transformArg(arg, cache)
 					argsLen = 1
 				}
 				if len(errs) > 0 {
@@ -424,7 +424,7 @@ func (r *Rule) transformMultiMatchArg(arg types.MatchData) ([]string, []error) {
 	return r.executeTransformationsMultimatch(arg.Value())
 }
 
-func (r *Rule) transformArg(arg types.MatchData, argIdx int, cache map[transformationKey]transformationValue) (string, []error) {
+func (r *Rule) transformArg(arg types.MatchData, cache map[transformationKey]transformationValue) (string, []error) {
 	switch {
 	case len(r.transformations) == 0:
 		return arg.Value(), nil
@@ -434,20 +434,20 @@ func (r *Rule) transformArg(arg types.MatchData, argIdx int, cache map[transform
 		return arg, errs
 	default:
 		// NOTE: See comment on transformationKey struct to understand this hacky code
-		argKey := arg.Key()
-		argKeyPtr := unsafe.StringData(argKey)
+		argValue := arg.Value()
+		argValuePtr := unsafe.StringData(argValue)
 
 		// Search from longest prefix (full chain) backwards for a cache hit.
 		// Best case: full chain cached → single map lookup, done.
 		// Typical case: shared prefix cached → start computing from there.
 		startIdx := 0
-		value := arg.Value()
+		value := argValue
 		var errs []error
 
 		for i := len(r.transformationPrefixIDs) - 1; i >= 0; i-- {
 			key := transformationKey{
-				argKey:            argKeyPtr,
-				argIndex:          argIdx,
+				argValue:          argValuePtr,
+				argValueLen:       len(argValue),
 				argVariable:       arg.Variable(),
 				transformationsID: r.transformationPrefixIDs[i],
 			}
@@ -474,8 +474,8 @@ func (r *Rule) transformArg(arg types.MatchData, argIdx int, cache map[transform
 			}
 
 			key := transformationKey{
-				argKey:            argKeyPtr,
-				argIndex:          argIdx,
+				argValue:          argValuePtr,
+				argValueLen:       len(argValue),
 				argVariable:       arg.Variable(),
 				transformationsID: r.transformationPrefixIDs[i],
 			}

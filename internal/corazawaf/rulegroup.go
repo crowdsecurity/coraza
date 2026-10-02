@@ -288,15 +288,16 @@ func NewRuleGroup() RuleGroup {
 }
 
 type transformationKey struct {
-	// TODO(anuraaga): This is a big hack to support performance on TinyGo. TinyGo
-	// cannot efficiently compute a hashcode for a struct if it has embedded non-fixed
-	// size fields, for example string as we'd prefer to use here. A pointer is usable,
-	// and it works for us since we know that the arg key string is populated once per
-	// transaction phase and we would never have different string pointers with the same
-	// content, or more problematically same pointer for different content, as the strings
-	// will be alive throughout the phase.
-	argKey            *byte
-	argIndex          int
+	// Transformations are a pure function of the value, so the cache is keyed on
+	// the value itself. A pointer is used instead of the string because TinyGo
+	// cannot efficiently compute a hashcode for a struct with non-fixed size fields
+	// such as string. The pointer also keeps the value alive, so its address cannot
+	// be reused for different content while the entry is cached. The length is part
+	// of the key because two substrings of one buffer can share a start address.
+	// The argument key and its position must not be used: repeated keys share the
+	// same key string, and collection iteration order is not stable.
+	argValue          *byte
+	argValueLen       int
 	argVariable       variables.RuleVariable
 	transformationsID int
 }
