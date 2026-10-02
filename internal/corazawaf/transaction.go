@@ -406,7 +406,13 @@ func (tx *Transaction) AddRequestHeader(key string, value string) {
 		// which body the backend parses -- see GHSA-w253-m66g-rx24. The header
 		// was added above, so a count of 1 means this is the first one.
 		if len(tx.variables.requestHeaders.Get("content-type")) == 1 {
-			val := strings.ToLower(value)
+			// Trimmed the way mime.ParseMediaType trims the media type, which
+			// a typical backend uses to pick its own parser: TrimSpace strips
+			// Unicode whitespace (U+0085, U+00A0, U+3000, ...) that net/http
+			// accepts in header values. Without it, a leading Unicode space
+			// skips body processing here while the backend still parses the
+			// body.
+			val := strings.TrimSpace(strings.ToLower(value))
 			if strings.HasPrefix(val, "application/x-www-form-urlencoded") {
 				tx.variables.reqbodyProcessor.Set("URLENCODED")
 			} else if strings.HasPrefix(val, "multipart/form-data") {
@@ -683,7 +689,9 @@ func (tx *Transaction) GetField(rv ruleVariableParams) []types.MatchData {
 		isException := false
 		lkey := strings.ToLower(c.Key())
 		for _, ex := range rv.Exceptions {
-			if (ex.KeyRx != nil && ex.KeyRx.MatchString(lkey)) || strings.ToLower(ex.KeyStr) == lkey || (ex.KeyStr == "" && ex.KeyRx == nil) {
+			// KeyStr is only meaningful without KeyRx: a regex exception from ctl
+			// carries an empty KeyStr, which would otherwise match a key named "".
+			if (ex.KeyRx != nil && ex.KeyRx.MatchString(lkey)) || (ex.KeyRx == nil && (ex.KeyStr == "" || strings.ToLower(ex.KeyStr) == lkey)) {
 				isException = true
 				break
 			}

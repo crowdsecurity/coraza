@@ -308,7 +308,7 @@ func readJSONNoValidation(s string, maxRecursion int) (map[string][]string, erro
 	json := gjson.Parse(s)
 	res := make(map[string][]string)
 	key := []byte("json")
-	_, err := readItems(json, key, maxRecursion, 0, 0, new(int), new(int), res)
+	_, err := readItems(json, key, maxRecursion, 0, 0, new(int), new(int), new(int), res)
 	return res, err
 }
 
@@ -570,26 +570,82 @@ func BenchmarkReadJSONArgumentLimit(b *testing.B) {
 // nested arrays in a 2 KB body produced 1025 arguments and the deny rule that
 // depends on the flag never fired.
 func TestReadJSONArrayLengthRespectsArgumentLimit(t *testing.T) {
-	const limit = 1000
-	depth := 1024
-	body := strings.Repeat("[", depth) + "1" + strings.Repeat("]", depth)
+	// Small enough to stay under the byte budget.
+	const limit = 5
 
-	res, truncated, err := readJSON(body, 10000, limit)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	exactArray := "[" + strings.Repeat("1,", limit-1) + "1]"
+
+	var padded strings.Builder
+	padded.WriteString("{")
+	for i := 0; i < limit; i++ {
+		padded.WriteString(`"p` + strconv.Itoa(i) + `":[{}],`)
 	}
-	if len(res) > limit {
-		t.Errorf("argument limit %d exceeded: got %d arguments", limit, len(res))
+	padded.WriteString(`"items":[1,2,3]}`)
+
+	tests := []struct {
+		name          string
+		body          string
+		wantTruncated bool
+		wantValues    int // total values in the result; 0 skips the check
+	}{
+		{
+			// 1 value plus limit length entries.
+			name:          "deeply nested arrays",
+			body:          strings.Repeat("[", 20) + "1" + strings.Repeat("]", 20),
+			wantTruncated: true,
+			wantValues:    limit + 1,
+		},
+		{
+			// The length entry does not count toward the limit.
+			name:          "array of exactly the limit",
+			body:          exactArray,
+			wantTruncated: false,
+			wantValues:    limit + 1,
+		},
+		{
+			// The partial length is not written.
+			name:          "array longer than the limit",
+			body:          "[" + strings.Repeat("1,", limit) + "1]",
+			wantTruncated: true,
+			wantValues:    limit,
+		},
+		{
+			// The padding fills the length cap, so the items length is
+			// dropped and truncated is set.
+			name:          "length entries padded by empty-object arrays",
+			body:          padded.String(),
+			wantTruncated: true,
+			wantValues:    limit + 3,
+		},
 	}
-	if !truncated {
-		t.Error("truncated must be set when the argument limit stops the walk, or the deny rule cannot fire")
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res, truncated, err := readJSON(tt.body, 10000, limit)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if truncated != tt.wantTruncated {
+				t.Errorf("truncated = %v, want %v", truncated, tt.wantTruncated)
+			}
+			total := 0
+			for _, values := range res {
+				total += len(values)
+			}
+			if total > 2*limit {
+				t.Errorf("got %d values, want at most %d (limit for real values plus limit for length entries)", total, 2*limit)
+			}
+			if tt.wantValues > 0 && total != tt.wantValues {
+				t.Errorf("got %d values, want %d", total, tt.wantValues)
+			}
+		})
 	}
 }
 
 // TestReadJSONBoundsFlattenedBytes covers memory growth that the argument
 // count cannot see. Keys carry the full path and are rewritten per leaf, so a
 // body of long paths stays under the argument limit while retaining many times
-// its own size.
+// its own size. Outgrowing the budget is an error, not a truncation.
 func TestReadJSONBoundsFlattenedBytes(t *testing.T) {
 	const limit = 1000
 
@@ -627,8 +683,8 @@ func TestReadJSONBoundsFlattenedBytes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			res, truncated, err := readJSON(tt.body, 10000, limit)
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
+			if err == nil || !strings.Contains(err.Error(), "flattened form exceeds") {
+				t.Fatalf("expected the byte budget error, got %v", err)
 			}
 			stored := 0
 			for k, values := range res {
@@ -638,12 +694,18 @@ func TestReadJSONBoundsFlattenedBytes(t *testing.T) {
 				}
 			}
 			budget := len(tt.body) * flattenBytesFactor
+			if budget < flattenBytesFloor {
+				budget = flattenBytesFloor
+			}
 			if stored > budget {
 				t.Errorf("flattened form retained %d bytes, over the %d byte budget for a %d byte body",
 					stored, budget, len(tt.body))
 			}
-			if !truncated {
-				t.Error("truncated must be set when the byte budget stops the walk")
+			if truncated {
+				t.Error("truncated is reserved for the argument limit, the byte budget must not set it")
+			}
+			if len(res) == 0 {
+				t.Error("expected the values flattened before the budget ran out to be kept for inspection")
 			}
 			if len(res) >= limit {
 				t.Errorf("expected the byte budget to stop the walk before the argument limit, got %d arguments", len(res))
