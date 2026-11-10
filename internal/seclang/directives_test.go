@@ -128,6 +128,21 @@ func TestSecRuleRemoveByMsg(t *testing.T) {
 			t.Errorf("expected 1 rule, got %d", waf.Rules.Count())
 		}
 	})
+
+	t.Run("keeps rules without msg", func(t *testing.T) {
+		waf := corazawaf.NewWAF()
+		addRule(t, waf, `REQUEST_URI "@rx attack" "id:1000,phase:1,log,pass,msg:'test-msg'"`)
+		addRule(t, waf, `REQUEST_URI "@rx attack" "id:1001,phase:1,log,pass"`)
+		if err := directiveSecRuleRemoveByMsg(&DirectiveOptions{WAF: waf, Opts: "test-msg"}); err != nil {
+			t.Fatal(err)
+		}
+		if waf.Rules.Count() != 1 {
+			t.Errorf("expected 1 rule, got %d", waf.Rules.Count())
+		}
+		if waf.Rules.GetRules()[0].ID() != 1001 {
+			t.Errorf("expected rule 1001 to remain, got %d", waf.Rules.GetRules()[0].ID())
+		}
+	})
 }
 
 func TestSecRuleRemoveByTag(t *testing.T) {
@@ -232,6 +247,16 @@ func TestInvalidRulesWithIgnoredErrors(t *testing.T) {
 	p = NewParser(waf)
 	if err := p.FromString(directives); err == nil {
 		t.Error("failed to error on invalid rule")
+	}
+	// A link of a chain dropped while errors were ignored is an error once
+	// SecIgnoreRuleCompilationErrors is Off again, not a silently skipped rule.
+	waf = corazawaf.NewWAF()
+	p = NewParser(waf)
+	if err := p.FromString(`SecIgnoreRuleCompilationErrors On
+SecRule REQUEST_URI "@no_op x" "id:1,phase:1,chain"
+SecIgnoreRuleCompilationErrors Off
+SecRule ARGS "@rx a" "id:2,phase:2,deny"`); err == nil {
+		t.Error("failed to error on a link of a dropped chain")
 	}
 }
 
