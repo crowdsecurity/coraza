@@ -125,6 +125,12 @@ func TestSetvarEvaluate(t *testing.T) {
 			expectInvalidSyntaxError: false,
 			expectNewVarValue:        "1",
 		},
+		{
+			name:                     "No value - The variable is set to 1",
+			init:                     "TX.newvar",
+			expectInvalidSyntaxError: false,
+			expectNewVarValue:        "1",
+		},
 	}
 
 	for _, tt := range tests {
